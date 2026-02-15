@@ -1,0 +1,214 @@
+@page "/terms"
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Terms and Conditions - Updater</PageTitle>
+<div class="terms-container">
+
+<section class="tos-header">
+    <div class="container">
+        <h1>Terms of Service</h1>
+        <p>Updater — Automatic OTA Updates for ESP32 Devices by Bitworx s.r.o.</p>
+    </div>
+</section>
+
+<section class="container tos-card">
+    <div class="tos-meta">
+        <div class="tos-meta-item">
+            <b>Provider</b>
+            <span>Bitworx s.r.o.</span>
+        </div>
+        <div class="tos-meta-item">
+            <b>Governing law</b>
+            <span>Czechia</span>
+        </div>
+        <div class="tos-meta-item">
+            <b>Contact</b>
+            <a href="mailto:info@bitworx.cz">info@bitworx.cz</a>
+        </div>
+    </div>
+
+    <div class="tos-summary">
+        <h2>Quick summary</h2>
+        <ul>
+            <li><strong>Free for now:</strong> The service is in demo and free. Some features may become paid later, with notice.</li>
+            <li><strong>What we do:</strong> Securely host, sign, and deliver firmware updates to your ESP32 devices over‑the‑air.</li>
+            <li><strong>Your responsibility:</strong> Provide firmware, keep your account secure, ensure device compatibility.</li>
+            <li><strong>Support:</strong> Email support during business hours (CET), best‑effort only.</li>
+            <li><strong>Data:</strong> Only what’s needed to run the service; we don’t sell your data.</li>
+            <li><strong>Termination:</strong> Delete your account anytime — data is erased and updates stop.</li>
+            <li><strong>Legal:</strong> Service is “as is.” Liability limited. Czech law applies.</li>
+        </ul>
+        <p><em>This summary is for convenience only. The full Terms of Service below are legally binding.</em></p>
+    </div>
+
+    <h2>Full Terms of Service</h2>
+
+    <details open>
+        <summary>1. Agreement and definitions</summary>
+        <div class="tos-content">
+            <p>These Terms govern access to and use of the Updater service (Service) provided by Bitworx s.r.o. (Provider). By using the Service, you agree to be bound by them.</p>
+            <ul>
+                <li><strong>Service:</strong> automatic distribution and installation of firmware and configuration updates to ESP32 devices.</li>
+                <li><strong>Device:</strong> an ESP32-based hardware unit enrolled to receive updates.</li>
+                <li><strong>Customer:</strong> a person or entity that registers to use the Service.</li>
+                <li><strong>Account:</strong> credentials and settings that allow a Customer to manage Devices and updates.</li>
+                <li><strong>Firmware:</strong> compiled software images intended for installation on Devices.</li>
+                <li><strong>Update:</strong> a firmware, configuration, or security patch delivered through the Service.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>2. Service description and scope</summary>
+        <div class="tos-content">
+            <p>Provider hosts, schedules, authenticates, signs, distributes, and tracks Firmware and Updates to Devices over‑the‑air.</p>
+            <p><strong>Customer responsibilities:</strong></p>
+            <ul>
+                <li>Provide accurate Device identifiers, network information, and contact details.</li>
+                <li>Ensure Devices meet hardware and connectivity requirements specified by Provider.</li>
+                <li>Supply Firmware in required formats and ensure it is free of third‑party rights violations.</li>
+            </ul>
+            <p><strong>Limitations:</strong> The Service does not include hardware repair, local on‑site support, or custom Firmware development unless separately contracted.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>3. Account registration and use</summary>
+        <div class="tos-content">
+            <ul>
+                <li>Customers must create an Account with truthful information.</li>
+                <li>Customers are responsible for securing credentials and all activity under their Account.</li>
+                <li>Provider may suspend or terminate Accounts suspected of unauthorized or abusive use.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>4. Firmware, data and intellectual property</summary>
+        <div class="tos-content">
+            <ul>
+                <li>Customers retain ownership of Firmware and configuration data they upload.</li>
+                <li>By uploading Firmware, Customers grant Provider a limited, non‑exclusive, worldwide, royalty‑free license to store, sign, distribute, and deliver Firmware to enrolled Devices for the purpose of providing the Service.</li>
+                <li>Provider software, platform code, tooling, and documentation remain Provider’s exclusive property.</li>
+                <li>Customers must not upload Firmware containing malware, unlawfully obtained code, or infringing content.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>5. Security, signing, and integrity</summary>
+        <div class="tos-content">
+            <ul>
+                <li>Provider may offer or require code signing and integrity checks. Customers must use signing keys or follow Provider’s signing process if required.</li>
+                <li>Customers must follow Provider’s security guidelines for Firmware signing, update rollouts, rollback strategies, and secret management.</li>
+                <li>Provider will notify Customers of suspected breaches affecting the Service. Customers must notify Provider promptly of any security incidents affecting their Firmware or Devices.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>6. Privacy and data processing</summary>
+        <div class="tos-content">
+            <ul>
+                <li>Provider may collect Device metadata, connection logs, update delivery status, and limited telemetry required for Service operation.</li>
+                <li>Provider uses data to operate, improve, and secure the Service and to communicate with Customers about updates and incidents.</li>
+                <li>Provider will not sell Customer data. Provider may share aggregated anonymized metrics or disclose data to comply with legal obligations.</li>
+                <li>Provider will retain data in accordance with its privacy policy and applicable laws.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>7. Payment and fees</summary>
+        <div class="tos-content">
+            <ul>
+                <li><strong>Current status:</strong> The Service is provided free of charge as part of a demo phase.</li>
+                <li><strong>Future fees:</strong> Provider reserves the right to introduce paid plans or fees for certain features or services in the future, with prior notice to Customers.</li>
+                <li>If fees are introduced, they will exclude taxes. Customer is responsible for applicable taxes unless a valid exemption is provided.</li>
+                <li>If fees are introduced, Provider may suspend the Service for overdue payments after notice.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>8. Service levels, support, and maintenance</summary>
+        <div class="tos-content">
+            <ul>
+                <li>Provider will use commercially reasonable efforts to make the Service available, but does not guarantee uninterrupted operation.</li>
+                <li><strong>Support:</strong> Support is provided on a best‑effort basis via email during business hours (CET). No guaranteed response times apply.</li>
+                <li>Provider may perform scheduled maintenance and will notify Customers of planned outages when feasible.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>9. Warranties, disclaimers, and no guarantee</summary>
+        <div class="tos-content">
+            <ul>
+                <li>Customers warrant that they have all rights necessary to upload and distribute Firmware and that Firmware will not cause property damage or endanger users.</li>
+                <li>Except as expressly stated, the Service is provided “as is” without other warranties. Provider disclaims implied warranties of merchantability, fitness for a particular purpose, and non‑infringement.</li>
+                <li>Provider does not guarantee that Updates will function correctly on all Devices; compatibility, hardware variations, and local network conditions may affect outcomes.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>10. Limitation of liability</summary>
+        <div class="tos-content">
+            <ul>
+                <li>Except for liability resulting from willful misconduct or gross negligence, Provider’s aggregate liability is limited to the fees paid by Customer in the 12 months preceding the claim or a lower statutory limit.</li>
+                <li>In no event will Provider be liable for lost profits, loss of business, data loss, special, incidental, or consequential damages.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>11. Indemnification</summary>
+        <div class="tos-content">
+            <ul>
+                <li><strong>Customer indemnity:</strong> Customer will indemnify, defend, and hold Provider harmless from third‑party claims arising from Customer’s Firmware, data, or breach of these Terms.</li>
+                <li><strong>Provider indemnity:</strong> Provider will indemnify Customer against claims that the Service’s core platform infringes third‑party intellectual property rights, provided that Customer promptly notifies Provider of the claim, Provider has sole control of the defense and settlement, and Customer cooperates reasonably in the defense.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>12. Termination and suspension</summary>
+        <div class="tos-content">
+            <ul>
+                <li><strong>Termination by Customer:</strong> Customers may terminate the Service at any time by deleting their Account. Upon deletion, all associated data will be permanently removed, and update functionality for enrolled Devices will cease.</li>
+                <li><strong>Termination by Provider:</strong> Provider may suspend or terminate access for material breach, fraudulent activity, or violations of law.</li>
+                <li><strong>Effect of termination:</strong> Customer accounts will be deactivated, and Provider may retain certain records to comply with legal obligations.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>13. Governing law</summary>
+        <div class="tos-content">
+            <p>These Terms are governed by the laws of Czechia.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>14. Changes to terms</summary>
+        <div class="tos-content">
+            <p>Provider may modify these Terms from time to time and will provide notice of material changes. Continued use after notice constitutes acceptance of updated Terms.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>15. Miscellaneous</summary>
+        <div class="tos-content">
+            <ul>
+                <li><strong>Entire agreement:</strong> These Terms plus any order forms are the complete agreement between the parties.</li>
+                <li><strong>Severability:</strong> If a provision is invalid, remaining provisions remain in force.</li>
+                <li><strong>Assignment:</strong> Customer may not assign the agreement without Provider consent.</li>
+                <li><strong>Contact:</strong> For notices, contact <a href="mailto:info@bitworx.cz">info@bitworx.cz</a>.</li>
+            </ul>
+        </div>
+    </details>
+
+    <p class="tos-cta">Questions about these Terms? Email <a href="mailto:info@bitworx.cz">info@bitworx.cz</a>.</p>
+</section>
+</div>

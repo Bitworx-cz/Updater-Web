@@ -1,0 +1,69 @@
+﻿@page "/manual"
+@inject NavigationManager navigationManager
+
+<div class="container">
+
+    <ProductBanner />
+
+    <section class="hero text-center">
+        <h2 class="display-4 font-bold">Setup Guide</h2>
+        <p class="lead text-muted">
+            Get your Arduino devices updating automatically in just 4 simple steps.
+        </p>
+    </section>
+
+    <section class="mt-5">
+        <h2 class="section-title">Step 1 – Get an Access Token</h2>
+        <p>
+            Open your browser and generate your token here:
+        </p>
+        <ButtonComponent Type="ButtonComponent.ButtonVariant.Outline" AdditionalClasses="mt-3" OnClick="@(() => navigationManager.NavigateTo("/token"))">
+            Get Token
+        </ButtonComponent>
+    </section>
+
+    <section class="mt-5">
+        <h2 class="section-title">Step 2 – Install the Updater Library</h2>
+        <ol>
+            <li>Open the <b>Arduino IDE</b>.</li>
+            <li>Go to <b>Sketch → Include Library → Manage Libraries…</b>.</li>
+            <li>Search for <b>Updater</b> and click <b>Install</b>.</li>
+        </ol>
+    </section>
+
+    <section class="mt-5">
+        <h2 class="section-title">Step 3 – Add Update Logic to Your Code</h2>
+        <p>In your sketch, include the library and call <code>TryUpdate</code> every few hours:</p>
+
+        <div class="arduino-code">
+<pre><code>
+#include &lt;Updater.h&gt;
+
+void loop() {
+    // Your normal logic here...
+
+    updater.TryUpdate("yourTokenHere", "yourSwName.ino");
+}
+</code></pre>
+        </div>
+
+        <ul>
+            <li>Replace <code>yourTokenHere</code> with the token you generated.</li>
+            <li>Replace <code>yourSwName.ino</code> with your firmware name.</li>
+        </ul>
+    </section>
+
+    <section class="mt-5">
+        <h2 class="section-title">Step 4 – Upload and Run</h2>
+        <p>
+            Upload your sketch to the board.
+            Your device will now check for new firmware and update automatically.
+        </p>
+    </section>
+
+    <section class="mt-5 text-center">
+        <h2 class="font-bold">✅ That’s it!</h2>
+        <p>Your devices are now <b>self-updating</b> and always secure.</p>
+    </section>
+
+</div>

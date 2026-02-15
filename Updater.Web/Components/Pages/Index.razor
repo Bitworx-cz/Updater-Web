@@ -1,0 +1,432 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Updater</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <div class="landing">
+        <section class="landing-hero" id="hero">
+            <div class="landing-hero-content glass-card">
+                <p class="landing-eyebrow">Remote firmware updates for connected hardware</p>
+                <h1 class="landing-title">
+                    Remote updates for microcontrollers — no cables, no visits, no stress.
+                </h1>
+                <p class="landing-subtitle">
+                    A universal platform for managing firmware updates across connected devices.
+                </p>
+                <p class="landing-subtitle-secondary">
+                    Deploy updates remotely, monitor device health, and stay in control — all from one place.
+                </p>
+
+                <div class="landing-hero-actions">
+                    <ButtonComponent Type="ButtonComponent.ButtonVariant.Filled"
+                                     AdditionalClasses="landing-btn-primary"
+                                     OnClick="@(() => NavigationManager.NavigateTo("/Identity/Login", true))">
+                        Get started for free
+                    </ButtonComponent>
+                    <ButtonComponent Type="ButtonComponent.ButtonVariant.Outline"
+                                     AdditionalClasses="landing-btn-secondary"
+                                     OnClick="@(() => NavigationManager.NavigateTo("/docs"))">
+                        View documentation
+                    </ButtonComponent>
+                </div>
+                <p class="landing-hero-footnote">
+                    Free for up to 100 devices. No credit card required.
+                </p>
+            </div>
+
+            <div class="landing-hero-infographic glass-card">
+                <img src="components/infographic.svg"
+                     alt="Overview of how Updater manages secure remote firmware updates"
+                     class="landing-infographic-image" />
+            </div>
+        </section>
+
+        <section class="landing-section">
+            <header class="landing-section-header">
+                <h2>Update your ESP32 and Arduino devices anywhere. At any scale.</h2>
+                <p>
+                    Connected devices shouldn’t require manual work. Our platform lets you deliver firmware updates remotely,
+                    track rollout progress, and ensure every device runs the right version — without physical access.
+                </p>
+            </header>
+
+            <ul class="landing-hero-list landing-hero-list-inline">
+                <li>No field visits or manual flashing</li>
+                <li>Rollouts you can pause, resume, or refine</li>
+                <li>Visibility into which devices need attention</li>
+            </ul>
+        </section>
+
+        <section class="landing-section">
+            <header class="landing-section-header">
+                <h2>Built for today’s needs. Ready for tomorrow’s hardware.</h2>
+                <p>
+                    Updater is designed for teams shipping real devices into the world — from prototypes to
+                    large-scale fleets. Start small, then scale without rethinking your update pipeline.
+                </p>
+            </header>
+
+            <div class="landing-features-grid">
+                <article class="glass-card feature-card">
+                    <h3>Remote firmware updates</h3>
+                    <p>Push updates over the air — no on-site visits required.</p>
+                </article>
+                <article class="glass-card feature-card">
+                    <h3>Centralized control</h3>
+                    <p>One dashboard to manage all devices and firmware versions.</p>
+                </article>
+                <article class="glass-card feature-card">
+                    <h3>Live visibility</h3>
+                    <p>Instantly see which devices are online, updated, or need attention.</p>
+                </article>
+                <article class="glass-card feature-card">
+                    <h3>Secure by design</h3>
+                    <p>Updates are authenticated and delivered safely, by default.</p>
+                </article>
+                <article class="glass-card feature-card">
+                    <h3>Scale without effort</h3>
+                    <p>Whether you manage dozens or thousands of devices, it just works.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section landing-section-split">
+            <div class="glass-card">
+                <h2>One platform. Multiple device types.</h2>
+                <p>
+                    Our goal is simple: a unified update system for connected hardware. Support is expanding over time — starting with ESP32.
+                </p>
+                <p class="landing-highlight">
+                    You build devices. We handle updates.
+                </p>
+            </div>
+            <div class="glass-card landing-device-card">
+                <h3>Today</h3>
+                <p>Ship secure OTA updates to ESP32-based devices without custom infrastructure.</p>
+                <h3>Tomorrow</h3>
+                <p>Be ready as your hardware stack evolves — without rewriting your update logic.</p>
+            </div>
+        </section>
+
+        <section class="landing-section">
+            <header class="landing-section-header">
+                <h2>Simple pricing that grows with you</h2>
+                <p>
+                    Start for free, then upgrade only when you need to support more devices or stricter requirements.
+                </p>
+            </header>
+
+            <div class="landing-pricing-grid">
+                <article class="glass-card pricing-card pricing-card-free">
+                    <h3>Free</h3>
+                    <p class="pricing-price">€0 <span>/ forever</span></p>
+                    <p class="pricing-tagline">
+                        Perfect for prototypes, pilots, and small deployments.
+                    </p>
+                    <ul class="pricing-list">
+                        <li>Up to 100 devices per project</li>
+                        <li>Full platform access</li>
+                        <li>Remote firmware updates</li>
+                        <li>Device liveness &amp; monitoring</li>
+                        <li>Unlimited firmware versions</li>
+                        <li>Secure update delivery</li>
+                        <li>Update requests: once per hour</li>
+                        <li>Community support</li>
+                        <li>No credit card upfront</li>
+                    </ul>
+                    <ButtonComponent Type="ButtonComponent.ButtonVariant.Filled"
+                                     AdditionalClasses="landing-btn-primary pricing-cta"
+                                     OnClick="@(() => NavigationManager.NavigateTo("/Identity/Login", true))">
+                        Get started for free
+                    </ButtonComponent>
+                </article>
+
+                <article class="glass-card pricing-card pricing-card-enterprise">
+                    <h3>Enterprise</h3>
+                    <p class="pricing-price">Custom pricing</p>
+                    <p class="pricing-tagline">
+                        For mission-critical and large-scale deployments.
+                    </p>
+                    <ul class="pricing-list">
+                        <li>Unlimited devices</li>
+                        <li>Custom update intervals</li>
+                        <li>SLA &amp; uptime guarantees</li>
+                        <li>Advanced security &amp; compliance</li>
+                        <li>Dedicated support &amp; onboarding</li>
+                    </ul>
+                    <ButtonComponent Type="ButtonComponent.ButtonVariant.Outline"
+                                     AdditionalClasses="landing-btn-secondary pricing-cta"
+                                     OnClick="@(() => NavigationManager.NavigateTo("/docs"))">
+                        Talk to us
+                    </ButtonComponent>
+                </article>
+            </div>
+
+            <p class="landing-pricing-footnote">
+                All plans include secure updates, monitoring, and unlimited firmware versions.<br />
+                No hidden limits. Upgrade only when you need to scale.
+            </p>
+        </section>
+    </div>
+}
+else
+{
+    <div class="dashboard-page">
+        <header class="dashboard-header">
+            <h1 class="dashboard-title">Overview</h1>
+            <p class="dashboard-subtitle">
+                High-level view of your devices, projects, and recent activity.
+            </p>
+        </header>
+
+        @if (IsLoading)
+        {
+            <div class="dashboard-loading">
+                <span class="spinner"></span>
+                <span class="loading-text">Loading dashboard...</span>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="error-alert">
+                <strong>Error:</strong> @ErrorMessage
+            </div>
+        }
+        else
+        {
+            <div class="dashboard-layout">
+                <section class="dashboard-main">
+                    <div class="dashboard-stats-grid">
+                        <StatCardComponent Value="@TotalDevices.ToString()"
+                                           Label="Devices"
+                                           SubText="@DevicesSubText"
+                                           AdditionalClasses="dashboard-stat-card" />
+
+                        <StatCardComponent Value="@OnlineDevices.ToString()"
+                                           Label="Recently active"
+                                           SubText="Seen in the last 24 hours"
+                                           AdditionalClasses="dashboard-stat-card" />
+
+                        <StatCardComponent Value="@DistinctSoftwares.ToString()"
+                                           Label="Firmware variants"
+                                           SubText="Unique software names"
+                                           AdditionalClasses="dashboard-stat-card" />
+
+                        <StatCardComponent Value="@TotalProjects.ToString()"
+                                           Label="Projects"
+                                           SubText="Spaces managing your fleets"
+                                           AdditionalClasses="dashboard-stat-card" />
+                    </div>
+
+                    <PanelComponent Title="Recent device activity">
+                        @if (RecentDevices.Any())
+                        {
+                            <ul class="dashboard-activity-list">
+                                @foreach (var device in RecentDevices)
+                                {
+                                    <li>
+                                        <div class="activity-main">
+                                            <span class="activity-label">@device.DeviceId</span>
+                                            <span class="activity-meta">@device.Software</span>
+                                        </div>
+                                        <span class="activity-time">@FormatLastActivity(device.LastActivity!.Value)</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="dashboard-empty">
+                                No recent activity yet. Devices will appear here once they start checking for updates.
+                            </p>
+                        }
+                    </PanelComponent>
+                </section>
+
+                <aside class="dashboard-side">
+                    <PanelComponent Title="Quick actions" AdditionalClasses="dashboard-panel">
+                        <div class="dashboard-actions">
+                            <ButtonComponent Type="ButtonComponent.ButtonVariant.Filled"
+                                             AdditionalClasses="w-100"
+                                             OnClick="@(() => NavigationManager.NavigateTo("/projects"))">
+                                View projects
+                            </ButtonComponent>
+                            <ButtonComponent Type="ButtonComponent.ButtonVariant.Outline"
+                                             AdditionalClasses="w-100"
+                                             OnClick="@(() => NavigationManager.NavigateTo("/devices"))">
+                                View devices
+                            </ButtonComponent>
+
+                            <ButtonComponent Type="ButtonComponent.ButtonVariant.Outline"
+                                             AdditionalClasses="w-100"
+                                             OnClick="@(() => NavigationManager.NavigateTo("/docs"))">
+                                Documentation
+                            </ButtonComponent>
+                        </div>
+                    </PanelComponent>
+
+                    <PanelComponent Title="Getting started" Alternative="true" AdditionalClasses="dashboard-panel">
+                        <p class="dashboard-help-text">
+                            New here? Start by creating project and generate token in it for upload of your first software.
+                        </p>
+                        <ul class="dashboard-help-list">
+                            <li>Create project under <strong>Projects</strong></li>
+                            <li>Upload firmware and set token from your Group</li>
+                        </ul>
+                    </PanelComponent>
+                </aside>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private ClaimsPrincipal? User;
+    private bool IsAuthenticated;
+    private string? UserToken;
+
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+
+    private int TotalDevices;
+    private int OnlineDevices;
+    private int DistinctSoftwares;
+    private int TotalProjects;
+
+    private List<ChipApiModel> RecentDevices { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            User = state.User;
+            IsAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+
+            if (IsAuthenticated)
+            {
+                await LoadDashboardData();
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        var nid = User?.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (nid is null)
+        {
+            NavigationManager.NavigateTo("/Identity/Login", true);
+            return;
+        }
+
+        var client = HttpClientFactory.CreateClient("apiservice");
+
+        var tokenResponse = await client.GetAsync($"User/{nid.Value}/token");
+        if (!tokenResponse.IsSuccessStatusCode)
+        {
+            ErrorMessage = "Unable to load user token.";
+            return;
+        }
+
+        UserToken = await tokenResponse.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(UserToken))
+        {
+            ErrorMessage = "User token is empty.";
+            return;
+        }
+
+        var devicesTask = client.GetAsync($"devices/{UserToken}");
+        var projectsTask = client.GetAsync($"projects/{UserToken}");
+
+        await Task.WhenAll(devicesTask, projectsTask);
+
+        if (!devicesTask.Result.IsSuccessStatusCode && !projectsTask.Result.IsSuccessStatusCode)
+        {
+            ErrorMessage = "Unable to load dashboard data.";
+            return;
+        }
+
+        List<ChipApiModel>? devices = null;
+        if (devicesTask.Result.IsSuccessStatusCode)
+        {
+            var devicesJson = await devicesTask.Result.Content.ReadAsStringAsync();
+            devices = System.Text.Json.JsonSerializer.Deserialize<List<ChipApiModel>>(devicesJson,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        List<ProjectModel>? projects = null;
+        if (projectsTask.Result.IsSuccessStatusCode)
+        {
+            var projectsJson = await projectsTask.Result.Content.ReadAsStringAsync();
+            projects = System.Text.Json.JsonSerializer.Deserialize<List<ProjectModel>>(projectsJson,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        TotalDevices = devices?.Count ?? 0;
+        TotalProjects = projects?.Count ?? 0;
+        DistinctSoftwares = devices?.Select(d => d.Software).Distinct(StringComparer.OrdinalIgnoreCase).Count() ?? 0;
+
+        if (devices is not null && devices.Any())
+        {
+            var now = DateTime.UtcNow;
+            OnlineDevices = devices.Count(d =>
+                d.LastActivity.HasValue &&
+                (now - d.LastActivity.Value).TotalHours <= 24);
+
+            RecentDevices = devices
+                .Where(d => d.LastActivity.HasValue)
+                .OrderByDescending(d => d.LastActivity)
+                .Take(5)
+                .ToList();
+        }
+    }
+
+    private string DevicesSubText =>
+        TotalDevices == 0 ? "No devices connected yet" : "Total registered devices";
+
+    private string FormatLastActivity(DateTime lastActivity)
+    {
+        var timeSpan = DateTime.UtcNow - lastActivity;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+        if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)}w ago";
+
+        return lastActivity.ToString("yyyy-MM-dd");
+    }
+
+    public record ChipApiModel
+    {
+        public string DeviceId { get; set; } = string.Empty;
+        public string Software { get; set; } = string.Empty;
+        public DateTime? LastActivity { get; set; }
+    }
+
+    public record ProjectModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+}

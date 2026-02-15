@@ -1,0 +1,27 @@
+@using Microsoft.AspNetCore.Components.Web
+
+<button class="custom-button @ButtonTypeClass @AdditionalClasses" @onclick="OnClick" disabled="@Disabled" @attributes="AdditionalAttributes">
+    @ChildContent
+</button>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string AdditionalClasses { get; set; } = "";
+    [Parameter] public ButtonVariant Type { get; set; } = ButtonVariant.Outline;
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string ButtonTypeClass => Type switch
+    {
+        ButtonVariant.Outline => "custom-button-outline",
+        ButtonVariant.Filled => "custom-button-filled",
+        _ => "custom-button-outline"
+    };
+
+    public enum ButtonVariant
+    {
+        Outline,
+        Filled
+    }
+}

@@ -1,0 +1,1601 @@
+@page "/project/{projectId:guid}"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager navigationManager
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Project Detail</PageTitle>
+
+<link rel="stylesheet" href="app.css">
+
+<script>
+    // Project detail version dropdown handler
+    if (!window.projectDetailClickHandler) {
+        window.projectDetailClickHandler = null;
+        window.projectDetailDotNetRef = null;
+
+        window.addClickOutsideListener = function (dotNetRef) {
+            window.projectDetailDotNetRef = dotNetRef;
+
+            // Remove existing listener if any
+            if (window.projectDetailClickHandler) {
+                document.removeEventListener('click', window.projectDetailClickHandler);
+            }
+
+            // Add new listener with a small delay to prevent immediate trigger
+            setTimeout(() => {
+                window.projectDetailClickHandler = function (event) {
+                    const dropdown = document.querySelector('.version-dropdown');
+                    const versionButton = event.target.closest('.version-button');
+
+                    // Don't close if clicking the version button or inside the dropdown
+                    if (!versionButton && dropdown && !dropdown.contains(event.target)) {
+                        window.projectDetailDotNetRef.invokeMethodAsync('CloseVersionDropdown');
+                    }
+                };
+                document.addEventListener('click', window.projectDetailClickHandler);
+            }, 100);
+        };
+
+        window.removeClickOutsideListener = function () {
+            if (window.projectDetailClickHandler) {
+                document.removeEventListener('click', window.projectDetailClickHandler);
+                window.projectDetailClickHandler = null;
+            }
+            window.projectDetailDotNetRef = null;
+        };
+    }
+</script>
+
+<div class="container">
+    <div class="project-header fade-in">
+        <div class="header-row">
+            <button class="back-button" @onclick="NavigateBack">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Back to Projects
+            </button>
+            @if (project != null)
+            {
+                <button class="delete-button" @onclick="ShowDeleteConfirmation" title="Delete project">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            }
+        </div>
+
+        @if (project != null)
+        {
+            <h1 class="project-title">@project.Name</h1>
+            @if (!string.IsNullOrEmpty(project.Description))
+            {
+                <p class="project-subtitle">@project.Description</p>
+            }
+        }
+    </div>
+
+    @if (showDeleteConfirmation && project != null)
+    {
+        <div class="modal-overlay" @onclick="CancelDelete">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h2 class="modal-title">Delete Project</h2>
+
+                <p class="modal-text">
+                    Are you sure you want to delete project <strong>@project.Name</strong>?
+                    This action cannot be undone and will delete all groups, devices, and software associated with this project.
+                </p>
+
+                <p class="modal-text">
+                    Type <strong>@project.Name</strong> to confirm:
+                </p>
+
+                <div class="form-group">
+                    <input type="text"
+                           value="@deleteConfirmationText"
+                           @oninput="OnDeleteConfirmationInput"
+                           placeholder="Enter project name"
+                           id="delete-confirmation-input-detail" />
+                </div>
+
+                @if (deleteErrorMessage != null)
+                {
+                    <div class="error-message">
+                        @deleteErrorMessage
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <button class="btn-cancel" @onclick="CancelDelete" disabled="@isDeleting">Cancel</button>
+                    <button class="btn-delete" @onclick="ConfirmDelete" disabled="@(isDeleting || deleteConfirmationText != project.Name)">
+                        @if (isDeleting)
+                        {
+                            <span>Deleting...</span>
+                        }
+                        else
+                        {
+                            <span>Delete Project</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="error-alert fade-in">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+    else if (groups != null)
+    {
+        <div class="groups-section fade-in">
+            <div class="section-header">
+                <h2 class="section-title">Groups</h2>
+                <button class="create-button" @onclick="ToggleCreateGroupForm" title="Create new group">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            @if (groups.Any())
+            {
+                <div class="groups-grid">
+                    @foreach (var group in groups)
+                    {
+                        <div class="group-card @(openVersionDropdownGroupId == group.Id ? "has-open-dropdown" : "")">
+                            <button class="delete-icon" @onclick="() => ShowDeleteGroupConfirmation(group)" @onclick:stopPropagation="true" title="Delete group">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <div class="group-content" @onclick="() => NavigateToGroup(group.Id)">
+                                <div class="group-header">
+                                    <h3 class="group-name">@group.Name</h3>
+                                </div>
+
+                        @if (!string.IsNullOrEmpty(group.Description))
+                        {
+                            <p class="group-description">@group.Description</p>
+                        }
+
+                        <div class="group-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Devices</span>
+                                <span class="stat-value">@group.DeviceCount</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Target Software</span>
+                                <span class="stat-value">@(group.TargetSoftwareName ?? "Not set")</span>
+                            </div>
+                            @if (group.TargetSoftwareVersion.HasValue)
+                            {
+                                <div class="stat-item version-selector">
+                                    <span class="stat-label">Version</span>
+                                    <div class="version-dropdown-container">
+                                        <button class="version-button"
+                                                @onclick="async (e) => await ToggleVersionDropdown(group.Id, e)"
+                                                @onclick:stopPropagation="true">
+                                            <span class="stat-value">@($"v{group.TargetSoftwareVersion}")</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+
+                                        @if (openVersionDropdownGroupId == group.Id && availableSoftwareVersions != null)
+                                        {
+                                            <div class="version-dropdown" @onclick:stopPropagation="true">
+                                                @if (isLoadingVersions)
+                                                {
+                                                    <div class="dropdown-loading">Loading versions...</div>
+                                                }
+                                                else if (availableSoftwareVersions.Any())
+                                                {
+                                                    @foreach (var software in availableSoftwareVersions)
+                                                    {
+                                                        <button class="version-option @(software.Id == group.TargetSoftwareId ? "selected" : "")"
+                                                                @onclick="async () => await SelectVersion(group.Id, software.Id)"
+                                                                disabled="@isUpdatingVersion">
+                                                                    <span>@($"v{software.VerMajor}")</span>
+                                                            @if (software.Id == group.TargetSoftwareId)
+                                                            {
+                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                </svg>
+                                                            }
+                                                        </button>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <div class="dropdown-empty">No versions available</div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                                <div class="group-footer">
+                                    <span class="group-date">Created: @group.CreatedAt.ToString("dd.MM.yyyy")</span>
+                                    <span class="group-date">Updated: @group.UpdatedAt.ToString("dd.MM.yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="info-alert">
+                    <p>No groups found in this project.</p>
+                    <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+                        Click the + button above to create your first group.
+                    </p>
+                </div>
+            }
+        </div>
+    }
+
+    @if (showCreateGroupForm)
+    {
+        <div class="modal-overlay" @onclick="CancelCreateGroup">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h2 class="modal-title">Create New Group</h2>
+
+                <div class="form-group">
+                    <label for="group-name">Group Name *</label>
+                    <input type="text" id="group-name" @bind="newGroupName" placeholder="Enter group name" />
+                </div>
+
+                <div class="form-group">
+                    <label for="group-description">Description</label>
+                    <textarea id="group-description" @bind="newGroupDescription" placeholder="Enter group description (optional)" rows="3"></textarea>
+                </div>
+
+                @if (createGroupErrorMessage != null)
+                {
+                    <div class="error-message">
+                        @createGroupErrorMessage
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <button class="btn-cancel" @onclick="CancelCreateGroup" disabled="@isCreatingGroup">Cancel</button>
+                    <button class="btn-create" @onclick="CreateGroup" disabled="@isCreatingGroup">
+                        @if (isCreatingGroup)
+                        {
+                            <span>Creating...</span>
+                        }
+                        else
+                        {
+                            <span>Create Group</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showDeleteGroupConfirmation && groupToDelete != null)
+    {
+        <div class="modal-overlay" @onclick="CancelDeleteGroup">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h2 class="modal-title delete-title">Delete Group</h2>
+
+                <p class="modal-text">
+                    Are you sure you want to delete group <strong>@groupToDelete.Name</strong>?
+                    This action cannot be undone and will delete all devices and software associated with this group.
+                </p>
+
+                <p class="modal-text">
+                    Type <strong>@groupToDelete.Name</strong> to confirm:
+                </p>
+
+                <div class="form-group">
+                    <input type="text"
+                           value="@deleteGroupConfirmationText"
+                           @oninput="OnDeleteGroupConfirmationInput"
+                           placeholder="Enter group name"
+                           id="delete-group-confirmation-input" />
+                </div>
+
+                @if (deleteGroupErrorMessage != null)
+                {
+                    <div class="error-message">
+                        @deleteGroupErrorMessage
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <button class="btn-cancel" @onclick="CancelDeleteGroup" disabled="@isDeletingGroup">Cancel</button>
+                    <button class="btn-delete" @onclick="ConfirmDeleteGroup" disabled="@(isDeletingGroup || deleteGroupConfirmationText != groupToDelete.Name)">
+                        @if (isDeletingGroup)
+                        {
+                            <span>Deleting...</span>
+                        }
+                        else
+                        {
+                            <span>Delete Group</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .back-button {
+        background-color: transparent;
+        border: 2px solid #f4f43c;
+        color: #f4f43c;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+        .back-button:hover {
+            border-color: #00bfff;
+            color: #00bfff;
+            transform: translateX(-4px);
+        }
+
+        .back-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+    .delete-button {
+        background-color: transparent;
+        border: 2px solid #ff6b6b;
+        color: #ff6b6b;
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        width: 40px;
+        height: 40px;
+    }
+
+        .delete-button:hover {
+            background-color: rgba(255, 107, 107, 0.1);
+            transform: scale(1.1);
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.4);
+        }
+
+        .delete-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .modal-content {
+        background-color: #1a1a1a;
+        border: 2px solid #f4f43c;
+        border-radius: 8px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        animation: slideIn 0.3s ease-in-out;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ff6b6b;
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-text {
+        color: #e0e0e0;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+        .modal-text strong {
+            color: #00bfff;
+        }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+        .form-group input {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(244, 244, 60, 0.5);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: #e0e0e0;
+            font-family: "IBM Plex Mono", "Courier New", monospace;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+            .form-group input:focus {
+                outline: none;
+                border-color: #00bfff;
+                box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+            }
+
+    .error-message {
+        background-color: rgba(255, 0, 0, 0.1);
+        border: 1px solid #ff0000;
+        color: #ff6b6b;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .btn-cancel,
+    .btn-delete {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.95rem;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        border: 2px solid;
+    }
+
+    .btn-cancel {
+        background-color: transparent;
+        border-color: #888;
+        color: #888;
+    }
+
+        .btn-cancel:hover:not(:disabled) {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+    .btn-delete {
+        background-color: transparent;
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+    }
+
+        .btn-delete:hover:not(:disabled) {
+            background-color: rgba(255, 107, 107, 0.1);
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-cancel:disabled,
+        .btn-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .project-header {
+        margin-bottom: 2rem;
+    }
+
+    .project-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #00bfff;
+        text-shadow: 0 0 8px #00bfff;
+        margin: 1rem 0;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .project-subtitle {
+        font-size: 1.1rem;
+        color: #e0e0e0;
+        margin: 0.5rem 0;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #f4f43c;
+        margin: 0;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .create-button {
+        background-color: transparent;
+        border: 2px solid #00bfff;
+        color: #00bfff;
+        padding: 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        width: 48px;
+        height: 48px;
+    }
+
+        .create-button:hover {
+            background-color: rgba(0, 191, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 0 12px rgba(0, 191, 255, 0.4);
+        }
+
+        .create-button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+    .groups-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .group-card {
+        background-color: transparent;
+        border: 2px solid #f4f43c;
+        border-radius: 8px;
+        padding: 1.5rem;
+        transition: all 0.2s ease;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        position: relative;
+        z-index: 1;
+    }
+
+        .group-card:hover {
+            border-color: #00bfff;
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 191, 255, 0.2);
+            z-index: 10;
+        }
+
+        .group-card.has-open-dropdown {
+            z-index: 1002;
+        }
+
+            .group-card.has-open-dropdown:hover {
+                z-index: 1002;
+            }
+
+    .group-content {
+        cursor: pointer;
+    }
+
+    .delete-icon {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background-color: transparent;
+        border: 2px solid #ff6b6b;
+        color: #ff6b6b;
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        width: 36px;
+        height: 36px;
+        z-index: 10;
+    }
+
+        .delete-icon:hover {
+            background-color: rgba(255, 107, 107, 0.1);
+            transform: scale(1.1);
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.4);
+        }
+
+        .delete-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+    .group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(244, 244, 60, 0.3);
+    }
+
+    .group-name {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #00bfff;
+        margin: 0;
+        text-shadow: 0 0 4px #00bfff;
+    }
+
+    .group-id {
+        font-size: 0.75rem;
+        color: #f4f43c;
+        opacity: 0.7;
+        font-family: "IBM Plex Mono", monospace;
+    }
+
+    .group-description {
+        color: #e0e0e0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin: 0.75rem 0;
+    }
+
+    .group-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin: 1.25rem 0;
+        padding: 1rem;
+        background-color: rgba(0, 191, 255, 0.05);
+        border-radius: 6px;
+        border: 1px solid rgba(0, 191, 255, 0.2);
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #f4f43c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #00bfff;
+    }
+
+    .group-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(244, 244, 60, 0.3);
+    }
+
+    .group-date {
+        font-size: 0.8rem;
+        color: #f4f43c;
+        opacity: 0.7;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Version dropdown styles */
+    .version-selector {
+        position: relative;
+    }
+
+    .version-dropdown-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .version-button {
+        background-color: transparent;
+        border: 2px solid #00bfff;
+        color: #00bfff;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+        .version-button:hover {
+            background-color: rgba(0, 191, 255, 0.1);
+            box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+        }
+
+        .version-button svg {
+            width: 12px;
+            height: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .version-button:hover svg {
+            transform: translateY(2px);
+        }
+
+    .version-dropdown {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: 0;
+        background-color: #1a1a1a;
+        border: 2px solid #00bfff;
+        border-radius: 6px;
+        min-width: 150px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1001;
+        box-shadow: 0 4px 12px rgba(0, 191, 255, 0.3);
+        animation: slideIn 0.2s ease-in-out;
+    }
+
+    .dropdown-loading,
+    .dropdown-empty {
+        padding: 1rem;
+        color: #888;
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
+    .version-option {
+        width: 100%;
+        background-color: transparent;
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #e0e0e0;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.9rem;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 191, 255, 0.1);
+    }
+
+        .version-option:last-child {
+            border-bottom: none;
+        }
+
+        .version-option:hover:not(:disabled) {
+            background-color: rgba(0, 191, 255, 0.1);
+            color: #00bfff;
+        }
+
+        .version-option.selected {
+            background-color: rgba(0, 191, 255, 0.15) !important;
+            color: #00bfff !important;
+            font-weight: bold !important;
+        }
+
+        .version-option:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .version-option svg {
+            width: 16px;
+            height: 16px;
+            stroke: #00bfff;
+            flex-shrink: 0;
+        }
+
+        .version-option.selected svg {
+            stroke: #00bfff;
+            animation: checkmarkAppear 0.3s ease-in-out;
+        }
+
+    @@keyframes checkmarkAppear {
+        from {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .modal-content {
+        background-color: #1a1a1a;
+        border: 2px solid #f4f43c;
+        border-radius: 8px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        animation: slideIn 0.3s ease-in-out;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #00bfff;
+        margin-bottom: 1.5rem;
+    }
+
+    .delete-title {
+        color: #ff6b6b;
+    }
+
+    .modal-text {
+        color: #e0e0e0;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+        .modal-text strong {
+            color: #00bfff;
+        }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #f4f43c;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(244, 244, 60, 0.5);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: #e0e0e0;
+            font-family: "IBM Plex Mono", "Courier New", monospace;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+            .form-group input:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #00bfff;
+                box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+            }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+    .error-message {
+        background-color: rgba(255, 0, 0, 0.1);
+        border: 1px solid #ff0000;
+        color: #ff6b6b;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .btn-cancel,
+    .btn-create,
+    .btn-delete {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.95rem;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        border: 2px solid;
+        background-color: transparent;
+    }
+
+    .btn-cancel {
+        border-color: #888;
+        color: #888;
+    }
+
+        .btn-cancel:hover:not(:disabled) {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+    .btn-create {
+        border-color: #00bfff;
+        color: #00bfff;
+    }
+
+        .btn-create:hover:not(:disabled) {
+            background-color: rgba(0, 191, 255, 0.1);
+            box-shadow: 0 0 12px rgba(0, 191, 255, 0.4);
+        }
+
+    .btn-delete {
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+    }
+
+        .btn-delete:hover:not(:disabled) {
+            background-color: rgba(255, 107, 107, 0.1);
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-cancel:disabled,
+        .btn-create:disabled,
+        .btn-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private ProjectModel? project;
+    private List<GroupModel>? groups;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private ClaimsPrincipal? User;
+    private string? UserToken;
+
+    private bool showDeleteConfirmation = false;
+    private bool isDeleting = false;
+    private string deleteConfirmationText = string.Empty;
+    private string? deleteErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadProjectAndGroups();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading project: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadProjectAndGroups()
+    {
+        try
+        {
+            // Get authenticated user
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+            var nid = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (nid == null)
+            {
+                errorMessage = "User is not authenticated.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Create HTTP client
+            var client = HttpClientFactory.CreateClient("apiservice");
+
+            // Get user token
+            var tokenResponse = await client.GetAsync($"user/{nid.Value}/token");
+
+            if (!tokenResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Error getting token: {tokenResponse.StatusCode}";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            UserToken = await tokenResponse.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(UserToken))
+            {
+                errorMessage = "Token is empty.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Get all projects to find the current one
+            var projectsResponse = await client.GetAsync($"projects/{UserToken}");
+
+            if (!projectsResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Error loading projects: {projectsResponse.StatusCode}";
+                isLoading = false;
+                return;
+            }
+
+            var projectsJson = await projectsResponse.Content.ReadAsStringAsync();
+            var projects = JsonSerializer.Deserialize<List<ProjectModel>>(projectsJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            project = projects?.FirstOrDefault(p => p.Id == ProjectId);
+
+            if (project == null)
+            {
+                errorMessage = "Project not found.";
+                isLoading = false;
+                return;
+            }
+
+            // Get groups for this project
+            var groupsResponse = await client.GetAsync($"projects/{ProjectId}/groups/{UserToken}");
+
+            if (!groupsResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Error loading groups: {groupsResponse.StatusCode}";
+                isLoading = false;
+                return;
+            }
+
+            var groupsJson = await groupsResponse.Content.ReadAsStringAsync();
+            var rawGroups = JsonSerializer.Deserialize<List<GroupRawModel>>(groupsJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            // Map to GroupModel with computed properties
+            groups = rawGroups?.Select(g => new GroupModel
+                {
+                    Id = g.Id,
+                    Name = g.Name,
+                    Description = g.Description,
+                    CreatedAt = g.CreatedAt,
+                    UpdatedAt = g.UpdatedAt,
+                    DeviceCount = g.Devices?.Count ?? 0,
+                    TargetSoftwareId = g.TargetSoftware?.Id,
+                    TargetSoftwareName = g.TargetSoftware?.Name,
+                    TargetSoftwareVersion = g.TargetSoftware?.VerMajor
+                }).ToList();
+
+            isLoading = false;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            errorMessage = $"Network error: {httpEx.Message}";
+            isLoading = false;
+        }
+        catch (JsonException jsonEx)
+        {
+            errorMessage = $"Data error: {jsonEx.Message}";
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unexpected error: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        navigationManager.NavigateTo("/projects");
+    }
+
+    private void NavigateToGroup(Guid groupId)
+    {
+        navigationManager.NavigateTo($"/group/{groupId}");
+    }
+
+    private void ShowDeleteConfirmation()
+    {
+        deleteConfirmationText = string.Empty;
+        deleteErrorMessage = null;
+        showDeleteConfirmation = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirmation = false;
+        deleteConfirmationText = string.Empty;
+        deleteErrorMessage = null;
+    }
+
+    private string? pendingBlurElementId = null;
+
+    private async Task OnDeleteConfirmationInput(ChangeEventArgs e)
+    {
+        deleteConfirmationText = e.Value?.ToString() ?? string.Empty;
+
+        if (project != null && deleteConfirmationText == project.Name)
+        {
+            pendingBlurElementId = "delete-confirmation-input-detail";
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (project == null || deleteConfirmationText != project.Name)
+        {
+            return;
+        }
+
+        isDeleting = true;
+        deleteErrorMessage = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("apiservice");
+            var response = await client.DeleteAsync($"projects/{project.Id}/{UserToken}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                deleteErrorMessage = $"Failed to delete project: {response.StatusCode}";
+                isDeleting = false;
+                return;
+            }
+
+            // Navigate back to projects list
+            navigationManager.NavigateTo("/projects");
+        }
+        catch (Exception ex)
+        {
+            deleteErrorMessage = $"Error: {ex.Message}";
+            isDeleting = false;
+        }
+    }
+
+    // Version dropdown state
+    private Guid? openVersionDropdownGroupId = null;
+    private List<SoftwareVersionModel>? availableSoftwareVersions = null;
+    private bool isLoadingVersions = false;
+    private bool isUpdatingVersion = false;
+    private bool needsToAddClickListener = false;
+    private bool hasRendered = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            hasRendered = true;
+        }
+
+        if (needsToAddClickListener && hasRendered)
+        {
+            needsToAddClickListener = false;
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("addClickOutsideListener", DotNetObjectReference.Create(this));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding click listener: {ex.Message}");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(pendingBlurElementId) && hasRendered)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('{pendingBlurElementId}')?.blur()");
+                pendingBlurElementId = null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error blurring element: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task ToggleVersionDropdown(Guid groupId, MouseEventArgs e)
+    {
+        if (openVersionDropdownGroupId == groupId)
+        {
+            // Close dropdown
+            openVersionDropdownGroupId = null;
+            availableSoftwareVersions = null;
+            if (hasRendered)
+            {
+                try
+                {
+                    await JSRuntime.InvokeVoidAsync("removeClickOutsideListener");
+                }
+                catch { }
+            }
+        }
+        else
+        {
+            // Open dropdown and load versions
+            openVersionDropdownGroupId = groupId;
+            isLoadingVersions = true;
+            availableSoftwareVersions = null;
+
+            try
+            {
+                var client = HttpClientFactory.CreateClient("apiservice");
+                var response = await client.GetAsync($"groups/{groupId}/software/{UserToken}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    availableSoftwareVersions = JsonSerializer.Deserialize<List<SoftwareVersionModel>>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }) ?? new List<SoftwareVersionModel>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading versions: {ex.Message}");
+                availableSoftwareVersions = new List<SoftwareVersionModel>();
+            }
+            finally
+            {
+                isLoadingVersions = false;
+                // Schedule adding click listener after next render
+                needsToAddClickListener = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void CloseVersionDropdown()
+    {
+        openVersionDropdownGroupId = null;
+        availableSoftwareVersions = null;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("removeClickOutsideListener");
+        }
+        catch
+        {
+            // Ignore errors during disposal
+        }
+    }
+
+    private async Task SelectVersion(Guid groupId, Guid softwareId)
+    {
+        isUpdatingVersion = true;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("apiservice");
+            var formData = new MultipartFormDataContent();
+            formData.Add(new StringContent(softwareId.ToString()), "softwareId");
+
+            var response = await client.PutAsync($"groups/{groupId}/target-software/{UserToken}", formData);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Close dropdown
+                openVersionDropdownGroupId = null;
+                availableSoftwareVersions = null;
+
+                // Reload groups to get updated data
+                await LoadProjectAndGroups();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating version: {ex.Message}");
+        }
+        finally
+        {
+            isUpdatingVersion = false;
+        }
+    }
+
+    // Group management state
+    private bool showCreateGroupForm = false;
+    private bool isCreatingGroup = false;
+    private string newGroupName = string.Empty;
+    private string newGroupDescription = string.Empty;
+    private string? createGroupErrorMessage;
+
+    private bool showDeleteGroupConfirmation = false;
+    private bool isDeletingGroup = false;
+    private GroupModel? groupToDelete;
+    private string deleteGroupConfirmationText = string.Empty;
+    private string? deleteGroupErrorMessage;
+
+    private void ToggleCreateGroupForm()
+    {
+        showCreateGroupForm = !showCreateGroupForm;
+        if (showCreateGroupForm)
+        {
+            newGroupName = string.Empty;
+            newGroupDescription = string.Empty;
+            createGroupErrorMessage = null;
+        }
+    }
+
+    private void CancelCreateGroup()
+    {
+        showCreateGroupForm = false;
+        newGroupName = string.Empty;
+        newGroupDescription = string.Empty;
+        createGroupErrorMessage = null;
+    }
+
+    private async Task CreateGroup()
+    {
+        if (string.IsNullOrWhiteSpace(newGroupName) || string.IsNullOrWhiteSpace(UserToken))
+        {
+            createGroupErrorMessage = "Group name is required.";
+            return;
+        }
+
+        isCreatingGroup = true;
+        createGroupErrorMessage = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("apiservice");
+
+            var formData = new MultipartFormDataContent();
+            formData.Add(new StringContent(newGroupName), "name");
+            if (!string.IsNullOrWhiteSpace(newGroupDescription))
+            {
+                formData.Add(new StringContent(newGroupDescription), "description");
+            }
+
+            var response = await client.PostAsync($"projects/{ProjectId}/groups/{UserToken}", formData);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                createGroupErrorMessage = $"Failed to create group: {errorContent}";
+                isCreatingGroup = false;
+                return;
+            }
+
+            // Reset form and close modal
+            showCreateGroupForm = false;
+            newGroupName = string.Empty;
+            newGroupDescription = string.Empty;
+
+            // Reload groups
+            await LoadProjectAndGroups();
+        }
+        catch (Exception ex)
+        {
+            createGroupErrorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isCreatingGroup = false;
+        }
+    }
+
+    private void ShowDeleteGroupConfirmation(GroupModel group)
+    {
+        groupToDelete = group;
+        deleteGroupConfirmationText = string.Empty;
+        deleteGroupErrorMessage = null;
+        showDeleteGroupConfirmation = true;
+    }
+
+    private void CancelDeleteGroup()
+    {
+        showDeleteGroupConfirmation = false;
+        groupToDelete = null;
+        deleteGroupConfirmationText = string.Empty;
+        deleteGroupErrorMessage = null;
+    }
+
+    private async Task OnDeleteGroupConfirmationInput(ChangeEventArgs e)
+    {
+        deleteGroupConfirmationText = e.Value?.ToString() ?? string.Empty;
+
+        if (groupToDelete != null && deleteGroupConfirmationText == groupToDelete.Name)
+        {
+            pendingBlurElementId = "delete-group-confirmation-input";
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDeleteGroup()
+    {
+        if (groupToDelete == null || deleteGroupConfirmationText != groupToDelete.Name || string.IsNullOrWhiteSpace(UserToken))
+        {
+            return;
+        }
+
+        isDeletingGroup = true;
+        deleteGroupErrorMessage = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("apiservice");
+            var response = await client.DeleteAsync($"groups/{groupToDelete.Id}/{UserToken}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                deleteGroupErrorMessage = $"Failed to delete group: {response.StatusCode}";
+                isDeletingGroup = false;
+                return;
+            }
+
+            // Reset and close modal
+            showDeleteGroupConfirmation = false;
+            groupToDelete = null;
+            deleteGroupConfirmationText = string.Empty;
+
+            // Reload groups
+            await LoadProjectAndGroups();
+        }
+        catch (Exception ex)
+        {
+            deleteGroupErrorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isDeletingGroup = false;
+        }
+    }
+
+    public record ProjectModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public record GroupModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public int DeviceCount { get; set; }
+        public Guid? TargetSoftwareId { get; set; }
+        public string? TargetSoftwareName { get; set; }
+        public int? TargetSoftwareVersion { get; set; }
+    }
+
+    // Raw model matching API response
+    public record GroupRawModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public List<DeviceModel>? Devices { get; set; }
+        public TargetSoftwareModel? TargetSoftware { get; set; }
+    }
+
+    public record DeviceModel
+    {
+        public Guid Id { get; set; }
+    }
+
+    public record TargetSoftwareModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int VerMajor { get; set; }
+    }
+
+    public record SoftwareVersionModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int VerMajor { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

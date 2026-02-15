@@ -1,0 +1,63 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>BITWORX Updater</PageTitle>
+
+<div class="page">
+    <div class="main">
+        <header class="app-bar-container">
+            <div class="app-bar">
+                <div class="app-bar-left">
+                    <a href="/" class="logo-container">
+                        <img src="logo-updater.svg" alt="Updater Logo" class="app-logo" />
+                    </a>
+                    <nav class="top-nav">
+                        <a href="/" class="@GetNavLinkClass(string.Empty)">Overview</a>
+                        @if (IsAuthenticated)
+                        {
+                            <a href="/projects" class="@GetNavLinkClass("projects")">Projects</a>
+                            <a href="/devices" class="@GetNavLinkClass("devices")">Devices</a>
+                        }
+                        <a href="/docs" class="@GetNavLinkClass("docs")">Docs</a>
+                    </nav>
+                </div>
+                <div class="app-bar-right">
+                    <ActionButtons />
+                    <MobileNav />
+                </div>
+            </div>
+        </header>
+
+        <main class="page-container">
+            <article class="page-container">
+                @Body
+            </article>
+        </main>
+
+        <Footer />
+    </div>
+</div>
+
+@code {
+    private bool IsAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        IsAuthenticated = state.User?.Identity?.IsAuthenticated ?? false;
+    }
+
+    private string GetNavLinkClass(string segment)
+    {
+        var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var cleanPath = path.Split('?', '#')[0];
+
+        var isRoot = string.IsNullOrEmpty(segment) && string.IsNullOrEmpty(cleanPath);
+        var isMatch = !string.IsNullOrEmpty(segment) &&
+                      cleanPath.StartsWith(segment, System.StringComparison.OrdinalIgnoreCase);
+
+        return "top-nav-link" + (isRoot || isMatch ? " active" : string.Empty);
+    }
+}

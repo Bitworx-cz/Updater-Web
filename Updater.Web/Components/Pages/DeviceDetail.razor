@@ -1,0 +1,463 @@
+@page "/device/{deviceId:guid}"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager navigationManager
+
+<PageTitle>Device Detail</PageTitle>
+
+<link rel="stylesheet" href="app.css">
+
+<div class="container">
+    <div class="device-header fade-in">
+        <button class="back-button" @onclick="NavigateBack">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Back to Group
+        </button>
+
+        @if (device != null)
+        {
+            <h1 class="device-title">Device Detail</h1>
+            <p class="device-subtitle">@device.DeviceId</p>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="error-alert fade-in">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+    else if (device != null)
+    {
+        <div class="info-section fade-in">
+            <div class="info-card">
+                <h2 class="section-title">Device Information</h2>
+                <div class="device-info">
+                    <div class="info-item">
+                        <span class="info-label">MAC Address</span>
+                        <span class="info-value mac-address">@device.MacAddress</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Device ID</span>
+                        <span class="info-value">@device.DeviceId</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Group</span>
+                        <span class="info-value clickable" @onclick="() => NavigateToGroup(device.GroupId)">@device.GroupName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Project</span>
+                        <span class="info-value clickable" @onclick="() => NavigateToProject(device.ProjectId)">@device.ProjectName</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section fade-in">
+            <div class="info-card">
+                <h2 class="section-title">Software Information</h2>
+                <div class="device-info">
+                    @if (device.CurrentSoftware != null)
+                    {
+                        <div class="info-item">
+                            <span class="info-label">Current Software</span>
+                            <span class="info-value">@device.CurrentSoftware.Name</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Current Version</span>
+                            <span class="info-value">v@device.CurrentSoftware.VerMajor</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="info-item">
+                            <span class="info-label">Current Software</span>
+                            <span class="no-data">Not installed</span>
+                        </div>
+                    }
+
+                    @if (device.PendingSoftware != null)
+                    {
+                        <div class="info-item">
+                            <span class="info-label">Pending Software</span>
+                            <span class="info-value">@device.PendingSoftware.Name</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Pending Version</span>
+                            <span class="info-value">v@device.PendingSoftware.VerMajor</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section fade-in">
+            <div class="info-card">
+                <h2 class="section-title">Activity</h2>
+                <div class="device-info">
+                    <div class="info-item">
+                        <span class="info-label">Last Activity</span>
+                        @if (device.LastActivity.HasValue)
+                        {
+                            <span class="info-value">@FormatLastActivity(device.LastActivity.Value)</span>
+                        }
+                        else
+                        {
+                            <span class="no-data">Never</span>
+                        }
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Created At</span>
+                        <span class="info-value">@device.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Updated At</span>
+                        <span class="info-value">@device.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .back-button {
+        background-color: transparent;
+        border: 2px solid #f4f43c;
+        color: #f4f43c;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        margin-bottom: 1.5rem;
+    }
+
+        .back-button:hover {
+            border-color: #00bfff;
+            color: #00bfff;
+            transform: translateX(-4px);
+        }
+
+        .back-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+    .device-header {
+        margin-bottom: 2rem;
+    }
+
+    .device-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #00bfff;
+        text-shadow: 0 0 8px #00bfff;
+        margin: 1rem 0;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .device-subtitle {
+        font-size: 1.1rem;
+        color: #e0e0e0;
+        margin: 0.5rem 0;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #f4f43c;
+        margin-bottom: 1rem;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .info-section {
+        margin-bottom: 2rem;
+    }
+
+    .info-card {
+        background-color: transparent;
+        border: 2px solid #f4f43c;
+        border-radius: 8px;
+        padding: 1.5rem;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .device-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #f4f43c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #00bfff;
+        text-shadow: 0 0 4px #00bfff;
+    }
+
+    .mac-address {
+        font-family: "IBM Plex Mono", monospace;
+        color: #00bfff;
+    }
+
+    .clickable {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .clickable:hover {
+            color: #f4f43c !important;
+            text-shadow: 0 0 4px #f4f43c !important;
+        }
+
+    .no-data {
+        color: #888;
+        font-style: italic;
+        font-size: 1rem;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 0;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(244, 244, 60, 0.2);
+        border-top-color: #f4f43c;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-text {
+        margin-top: 1rem;
+        color: #f4f43c;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .error-alert {
+        background-color: rgba(255, 0, 0, 0.1);
+        border: 1px solid #ff0000;
+        color: #ff6b6b;
+        padding: 1rem;
+        border-radius: 6px;
+        margin: 1rem 0;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Guid DeviceId { get; set; }
+
+    private DeviceDetailModel? device;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private ClaimsPrincipal? User;
+    private string? UserToken;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadDeviceDetail();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading device: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadDeviceDetail()
+    {
+        try
+        {
+            // Get authenticated user
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+            var nid = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (nid == null)
+            {
+                errorMessage = "User is not authenticated.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Create HTTP client
+            var client = HttpClientFactory.CreateClient("apiservice");
+
+            // Get user token
+            var tokenResponse = await client.GetAsync($"user/{nid.Value}/token");
+
+            if (!tokenResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Error getting token: {tokenResponse.StatusCode}";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            UserToken = await tokenResponse.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(UserToken))
+            {
+                errorMessage = "Token is empty.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Get device detail
+            var deviceResponse = await client.GetAsync($"devices/{DeviceId}/{UserToken}");
+
+            if (!deviceResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Error loading device: {deviceResponse.StatusCode}";
+                isLoading = false;
+                return;
+            }
+
+            var deviceJson = await deviceResponse.Content.ReadAsStringAsync();
+            device = JsonSerializer.Deserialize<DeviceDetailModel>(deviceJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            isLoading = false;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            errorMessage = $"Network error: {httpEx.Message}";
+            isLoading = false;
+        }
+        catch (JsonException jsonEx)
+        {
+            errorMessage = $"Data error: {jsonEx.Message}";
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unexpected error: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        if (device != null)
+        {
+            navigationManager.NavigateTo($"/group/{device.GroupId}");
+        }
+        else
+        {
+            navigationManager.NavigateTo("/devices");
+        }
+    }
+
+    private void NavigateToGroup(Guid groupId)
+    {
+        navigationManager.NavigateTo($"/group/{groupId}");
+    }
+
+    private void NavigateToProject(Guid projectId)
+    {
+        navigationManager.NavigateTo($"/project/{projectId}");
+    }
+
+    private string FormatLastActivity(DateTime lastActivity)
+    {
+        var now = DateTime.UtcNow;
+        var diff = now - lastActivity;
+
+        if (diff.TotalMinutes < 1)
+            return "Just now";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays}d ago";
+
+        return lastActivity.ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
+    public record DeviceDetailModel
+    {
+        public Guid Id { get; set; }
+        public string DeviceId { get; set; } = string.Empty;
+        public string MacAddress { get; set; } = string.Empty;
+        public Guid GroupId { get; set; }
+        public string GroupName { get; set; } = string.Empty;
+        public Guid ProjectId { get; set; }
+        public string ProjectName { get; set; } = string.Empty;
+        public SoftwareModel? CurrentSoftware { get; set; }
+        public SoftwareModel? PendingSoftware { get; set; }
+        public DateTime? LastActivity { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public record SoftwareModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int VerMajor { get; set; }
+    }
+}

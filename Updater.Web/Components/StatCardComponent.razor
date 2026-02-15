@@ -1,0 +1,15 @@
+﻿<div class="stat-card @AdditionalClasses">
+    <div class="stat-value">@Value</div>
+    <div class="stat-label">@Label</div>
+    @if (!string.IsNullOrEmpty(SubText))
+    {
+            <div class="text-muted-custom mt-1" style="font-size: 12px;">@SubText</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string SubText { get; set; } = "";
+    [Parameter] public string AdditionalClasses { get; set; } = "";
+}

@@ -1,0 +1,374 @@
+﻿@page "/devices"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager navigationManager;
+
+
+<PageTitle>Devices</PageTitle>
+
+<link rel="stylesheet" href="app.css">
+
+<div class="container">
+    <div class="devices-header fade-in">
+        <h1 class="devices-title">Device overview</h1>
+        <p class="devices-subtitle">
+            Overview of all of your microcontrollers and their system version
+        </p>
+    </div>
+
+    @if (devices != null && devices.Any())
+    {
+        <div class="stats-grid fade-in">
+            <div class="stat-card">
+                <div class="stat-value">@devices.Count</div>
+                <div class="stat-label">Total devices</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">@devices.Select(d => d.ChipType).Distinct().Count()</div>
+                <div class="stat-label">Device types</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">@devices.Select(d => d.Software).Distinct().Count()</div>
+                <div class="stat-label">Software types</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">@devices.Select(d => d.GroupName).Distinct().Count()</div>
+                <div class="stat-label">Groups</div>
+            </div>
+        </div>
+
+        <div class="search-container fade-in">
+            <input type="text"
+                   class="search-input"
+                   placeholder="Search devices (MAC, ID, Software, Group)..."
+                   @bind="searchQuery"
+                   @bind:event="oninput"
+                   @onkeyup="FilterDevices" />
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="error-alert fade-in">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+    else if (devices != null && devices.Any())
+    {
+        <div class="devices-table-container fade-in">
+            <table class="devices-table">
+                <thead>
+                    <tr>
+                        <th>MAC Address</th>
+                        <th>Device ID</th>
+                        <th>Software</th>
+                        <th>Version</th>
+                        <th>Group</th>
+                        <th>Last Activity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var device in filteredDevices)
+                    {
+                        <tr>
+                            <td>
+                                <span class="mac-address">@device.MacAdress</span>
+                            </td>
+                            <td>@device.DeviceId</td>
+                            <td>@device.Software</td>
+                            <td>@device.SoftwareVersion</td>
+                            <td>
+                                <span class="group-name">@device.GroupName</span>
+                            </td>
+                            <td>
+                                @if (device.LastActivity.HasValue)
+                                {
+                                    <span class="last-activity">@FormatLastActivity(device.LastActivity.Value)</span>
+                                }
+                                else
+                                {
+                                    <span class="no-activity">Never</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="info-alert fade-in">
+            <p>No devices found.</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+                Check connection and refresh page.
+            </p>
+        </div>
+    }
+</div>
+
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .stat-card {
+        background-color: transparent;
+        border: 2px solid #f4f43c; /* neon yellow border */
+        border-radius: 6px;
+        padding: 1rem 1.25rem;
+        color: #e0e0e0;
+        text-align: center;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+
+        .stat-card:hover {
+            border-color: #00bfff; /* neon blue highlight */
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+    /* large number */
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #00bfff; /* cyan highlight */
+        text-shadow: 0 0 4px #00bfff;
+    }
+
+    /* label text */
+    .stat-label {
+        font-size: 0.9rem;
+        color: #f4f43c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.25rem;
+    }
+
+    /* Search container */
+    .search-container {
+        margin: 1.5rem 0;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        background-color: transparent;
+        border: 2px solid #f4f43c;
+        border-radius: 6px;
+        color: #e0e0e0;
+        transition: all 0.2s ease;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #00bfff;
+            box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: #888;
+        }
+
+    /* New column styles */
+    .group-name {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background-color: rgba(244, 244, 60, 0.1);
+        border: 1px solid #f4f43c;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .last-activity {
+        color: #00bfff;
+        font-size: 0.9rem;
+    }
+
+    .no-activity {
+        color: #888;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+
+    /* Table container with bottom spacing */
+    .devices-table-container {
+        margin-bottom: 4rem;
+    }
+
+    /* subtle fade animation */
+    .fade-in {
+        animation: fadeIn 0.4s ease-in-out;
+    }
+</style>
+
+
+@code {
+    private List<ChipApiModel>? devices;
+    private List<ChipApiModel> filteredDevices = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private ClaimsPrincipal? User;
+    private string? UserToken;
+    private string searchQuery = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadDevices();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Nastala chyba pri načítaní zariadení: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private void FilterDevices()
+    {
+        if (devices == null)
+        {
+            filteredDevices = new List<ChipApiModel>();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredDevices = devices;
+            return;
+        }
+
+        var query = searchQuery.ToLower();
+        filteredDevices = devices.Where(d =>
+            d.MacAdress.ToLower().Contains(query) ||
+            d.DeviceId.ToLower().Contains(query) ||
+            d.Software.ToLower().Contains(query) ||
+            d.GroupName.ToLower().Contains(query)
+        ).ToList();
+    }
+
+    private string FormatLastActivity(DateTime lastActivity)
+    {
+        var timeSpan = DateTime.UtcNow - lastActivity;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+        if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)}w ago";
+
+        return lastActivity.ToString("yyyy-MM-dd");
+    }
+
+    private async Task LoadDevices()
+    {
+        try
+        {
+            // Získanie autentifikovaného užívateľa
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+            var nid = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (nid == null)
+            {
+                errorMessage = "Užívateľ nie je autentifikovaný.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Vytvorenie HTTP klienta
+            var client = HttpClientFactory.CreateClient("apiservice");
+
+            // Získanie tokenu užívateľa
+            var tokenResponse = await client.GetAsync($"user/{nid.Value}/token");
+
+            if (!tokenResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Chyba pri získavaní tokenu: {tokenResponse.StatusCode}";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            UserToken = await tokenResponse.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(UserToken))
+            {
+                errorMessage = "Token is empty.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Volanie API pre získanie zariadení
+            var devicesResponse = await client.GetAsync($"devices/{UserToken}");
+
+            if (!devicesResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Devices error: {devicesResponse.StatusCode}";
+                isLoading = false;
+                return;
+            }
+
+            var json = await devicesResponse.Content.ReadAsStringAsync();
+            devices = JsonSerializer.Deserialize<List<ChipApiModel>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            // Initialize filtered devices
+            filteredDevices = devices ?? new List<ChipApiModel>();
+
+            isLoading = false;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            errorMessage = $"Network error: {httpEx.Message}";
+            isLoading = false;
+        }
+        catch (JsonException jsonEx)
+        {
+            errorMessage = $"Data error: {jsonEx.Message}";
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unexpected error: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    public record ChipApiModel
+    {
+        public string MacAdress { get; set; } = string.Empty;
+        public string DeviceId { get; set; } = string.Empty;
+        public string Software { get; set; } = string.Empty;
+        public string SoftwareVersion { get; set; } = string.Empty;
+        public string ChipType { get; set; } = string.Empty;
+        public string GroupName { get; set; } = string.Empty;
+        public DateTime? LastActivity { get; set; }
+    }
+}

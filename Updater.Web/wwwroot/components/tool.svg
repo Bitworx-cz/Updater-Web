@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="24" width="24">
+  <title>wrench</title>
+  <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15.5 4.5a3.5 3.5 0 0 0-4.5 3.3l.1.9L5 14.8a2.1 2.1 0 0 0 0 3l1.2 1.2a2.1 2.1 0 0 0 3 0l6.1-6.1.9.1A3.5 3.5 0 0 0 19.5 8 3.4 3.4 0 0 0 18 5.3L16.5 6" />
+    <circle cx="7.5" cy="16.5" r="0.9" />
+  </g>
+</svg>

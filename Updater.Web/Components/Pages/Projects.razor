@@ -1,0 +1,814 @@
+@page "/projects"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json
+@using Microsoft.JSInterop
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager navigationManager
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Projects</PageTitle>
+
+<link rel="stylesheet" href="app.css">
+
+<div class="container">
+    <div class="projects-header fade-in">
+        <div class="header-content">
+            <div>
+                <h1 class="projects-title">Projects</h1>
+                <p class="projects-subtitle">
+                    Overview of all your projects and device groups
+                </p>
+            </div>
+            <button class="create-button" @onclick="ToggleCreateForm" title="Create new project">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    @if (showDeleteConfirmation && projectToDelete != null)
+    {
+        <div class="modal-overlay" @onclick="CancelDelete">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h2 class="modal-title delete-title">Delete Project</h2>
+
+                <p class="modal-text">
+                    Are you sure you want to delete project <strong>@projectToDelete.Name</strong>?
+                    This action cannot be undone.
+                </p>
+
+                <p class="modal-text">
+                    Type <strong>@projectToDelete.Name</strong> to confirm:
+                </p>
+
+                <div class="form-group">
+                    <input type="text"
+                           value="@deleteConfirmationText"
+                           @oninput="OnDeleteConfirmationInput"
+                           placeholder="Enter project name"
+                           id="delete-confirmation-input" />
+                </div>
+
+                @if (deleteErrorMessage != null)
+                {
+                    <div class="error-message">
+                        @deleteErrorMessage
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <button class="btn-cancel" @onclick="CancelDelete" disabled="@isDeleting">Cancel</button>
+                    <button class="btn-delete" @onclick="ConfirmDelete" disabled="@(isDeleting || deleteConfirmationText != projectToDelete.Name)">
+                        @if (isDeleting)
+                        {
+                            <span>Deleting...</span>
+                        }
+                        else
+                        {
+                            <span>Delete Project</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showCreateForm)
+    {
+        <div class="modal-overlay" @onclick="CancelCreate">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h2 class="modal-title">Create New Project</h2>
+
+                <div class="form-group">
+                    <label for="project-name">Project Name *</label>
+                    <input type="text" id="project-name" @bind="newProjectName" placeholder="Enter project name" />
+                </div>
+
+                <div class="form-group">
+                    <label for="project-description">Description</label>
+                    <textarea id="project-description" @bind="newProjectDescription" placeholder="Enter project description (optional)" rows="3"></textarea>
+                </div>
+
+                @if (createErrorMessage != null)
+                {
+                    <div class="error-message">
+                        @createErrorMessage
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <button class="btn-cancel" @onclick="CancelCreate" disabled="@isCreating">Cancel</button>
+                    <button class="btn-create" @onclick="CreateProject" disabled="@isCreating">
+                        @if (isCreating)
+                        {
+                            <span>Creating...</span>
+                        }
+                        else
+                        {
+                            <span>Create Project</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (projects != null && projects.Any())
+    {
+        <div class="stats-grid fade-in">
+            <div class="stat-card">
+                <div class="stat-value">@projects.Count</div>
+                <div class="stat-label">Total projects</div>
+            </div>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="error-alert fade-in">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+    else if (projects != null && projects.Any())
+    {
+        <div class="projects-grid fade-in">
+            @foreach (var project in projects)
+            {
+                <div class="project-card">
+                    <button class="delete-icon" @onclick="() => ShowDeleteConfirmation(project)" @onclick:stopPropagation="true" title="Delete project">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="project-content" @onclick="() => NavigateToProject(project.Id)">
+                        <div class="project-header">
+                            <h2 class="project-name">@project.Name</h2>
+                        </div>
+                        @if (!string.IsNullOrEmpty(project.Description))
+                        {
+                            <p class="project-description">@project.Description</p>
+                        }
+                        <div class="project-footer">
+                            <span class="project-id">ID: @project.Id.ToString().Substring(0, 8)</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="info-alert fade-in">
+            <p>No projects found.</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+                Create your first project to get started.
+            </p>
+        </div>
+    }
+</div>
+
+<style>
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 2rem;
+    }
+
+    .create-button {
+        background-color: transparent;
+        border: 2px solid #00bfff;
+        color: #00bfff;
+        padding: 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        width: 48px;
+        height: 48px;
+    }
+
+        .create-button:hover {
+            background-color: rgba(0, 191, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 0 12px rgba(0, 191, 255, 0.4);
+        }
+
+        .create-button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .stat-card {
+        background-color: transparent;
+        border: 2px solid #f4f43c;
+        border-radius: 6px;
+        padding: 1rem 1.25rem;
+        color: #e0e0e0;
+        text-align: center;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+
+        .stat-card:hover {
+            border-color: #00bfff;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #00bfff;
+        text-shadow: 0 0 4px #00bfff;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #f4f43c;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.25rem;
+    }
+
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .project-card {
+        background-color: transparent;
+        border: 2px solid #f4f43c;
+        border-radius: 8px;
+        padding: 1.5rem;
+        transition: all 0.2s ease;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        position: relative;
+    }
+
+        .project-card:hover {
+            border-color: #00bfff;
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 191, 255, 0.2);
+        }
+
+    .project-content {
+        cursor: pointer;
+    }
+
+    .delete-icon {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background-color: transparent;
+        border: 2px solid #ff6b6b;
+        color: #ff6b6b;
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        width: 36px;
+        height: 36px;
+        z-index: 10;
+    }
+
+        .delete-icon:hover {
+            background-color: rgba(255, 107, 107, 0.1);
+            transform: scale(1.1);
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.4);
+        }
+
+        .delete-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .modal-content {
+        background-color: #1a1a1a;
+        border: 2px solid #f4f43c;
+        border-radius: 8px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        animation: slideIn 0.3s ease-in-out;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #00bfff;
+        margin-bottom: 1.5rem;
+    }
+
+    .delete-title {
+        color: #ff6b6b;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #f4f43c;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(244, 244, 60, 0.5);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: #e0e0e0;
+            font-family: "IBM Plex Mono", "Courier New", monospace;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+            .form-group input:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #00bfff;
+                box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+            }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+    .error-message {
+        background-color: rgba(255, 0, 0, 0.1);
+        border: 1px solid #ff0000;
+        color: #ff6b6b;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .btn-cancel,
+    .btn-create,
+    .btn-delete {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.95rem;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        border: 2px solid;
+        background-color: transparent;
+    }
+
+    .btn-cancel {
+        border-color: #888;
+        color: #888;
+    }
+
+        .btn-cancel:hover:not(:disabled) {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+    .btn-create {
+        border-color: #00bfff;
+        color: #00bfff;
+    }
+
+        .btn-create:hover:not(:disabled) {
+            background-color: rgba(0, 191, 255, 0.1);
+            box-shadow: 0 0 12px rgba(0, 191, 255, 0.4);
+        }
+
+    .btn-delete {
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+    }
+
+        .btn-delete:hover:not(:disabled) {
+            background-color: rgba(255, 107, 107, 0.1);
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-cancel:disabled,
+        .btn-create:disabled,
+        .btn-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .modal-text {
+        color: #e0e0e0;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+        .modal-text strong {
+            color: #00bfff;
+        }
+
+    .btn-delete {
+        background-color: transparent;
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: "IBM Plex Mono", "Courier New", monospace;
+        font-size: 0.95rem;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        border: 2px solid;
+    }
+
+        .btn-delete:hover:not(:disabled) {
+            background-color: rgba(255, 107, 107, 0.1);
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .project-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .project-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #00bfff;
+        margin: 0;
+        text-shadow: 0 0 4px #00bfff;
+    }
+
+    .project-date {
+        font-size: 0.85rem;
+        color: #f4f43c;
+        opacity: 0.8;
+    }
+
+    .project-description {
+        color: #e0e0e0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin: 1rem 0;
+    }
+
+    .project-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(244, 244, 60, 0.3);
+    }
+
+    .project-id {
+        font-size: 0.85rem;
+        color: #f4f43c;
+        font-family: "IBM Plex Mono", monospace;
+        opacity: 0.7;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@code {
+    private List<ProjectModel>? projects;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private ClaimsPrincipal? User;
+    private string? UserToken;
+
+    private bool showCreateForm = false;
+    private bool isCreating = false;
+    private string newProjectName = string.Empty;
+    private string newProjectDescription = string.Empty;
+    private string? createErrorMessage;
+
+    private bool showDeleteConfirmation = false;
+    private bool isDeleting = false;
+    private ProjectModel? projectToDelete;
+    private string deleteConfirmationText = string.Empty;
+    private string? deleteErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading projects: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadProjects()
+    {
+        try
+        {
+            // Get authenticated user
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+            var nid = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (nid == null)
+            {
+                errorMessage = "User is not authenticated.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Create HTTP client
+            var client = HttpClientFactory.CreateClient("apiservice");
+
+            // Get user token
+            var tokenResponse = await client.GetAsync($"user/{nid.Value}/token");
+
+            if (!tokenResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Error getting token: {tokenResponse.StatusCode}";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            UserToken = await tokenResponse.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(UserToken))
+            {
+                errorMessage = "Token is empty.";
+                isLoading = false;
+                navigationManager.NavigateTo("/Identity/Login", true);
+                return;
+            }
+
+            // Call API to get projects
+            var projectsResponse = await client.GetAsync($"projects/{UserToken}");
+
+            if (!projectsResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"Projects error: {projectsResponse.StatusCode}";
+                isLoading = false;
+                return;
+            }
+
+            var json = await projectsResponse.Content.ReadAsStringAsync();
+            projects = JsonSerializer.Deserialize<List<ProjectModel>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            isLoading = false;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            errorMessage = $"Network error: {httpEx.Message}";
+            isLoading = false;
+        }
+        catch (JsonException jsonEx)
+        {
+            errorMessage = $"Data error: {jsonEx.Message}";
+            isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unexpected error: {ex.Message}";
+            isLoading = false;
+        }
+    }
+
+    private void NavigateToProject(Guid projectId)
+    {
+        navigationManager.NavigateTo($"/project/{projectId}");
+    }
+
+    private void ToggleCreateForm()
+    {
+        showCreateForm = !showCreateForm;
+        if (!showCreateForm)
+        {
+            // Reset form
+            newProjectName = string.Empty;
+            newProjectDescription = string.Empty;
+            createErrorMessage = null;
+        }
+    }
+
+    private void CancelCreate()
+    {
+        showCreateForm = false;
+        newProjectName = string.Empty;
+        newProjectDescription = string.Empty;
+        createErrorMessage = null;
+    }
+
+    private async Task CreateProject()
+    {
+        createErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newProjectName))
+        {
+            createErrorMessage = "Project name is required";
+            return;
+        }
+
+        isCreating = true;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("apiservice");
+
+            var formContent = new MultipartFormDataContent
+            {
+                { new StringContent(newProjectName), "name" },
+                { new StringContent(newProjectDescription ?? string.Empty), "description" }
+            };
+
+            var response = await client.PostAsync($"projects/{UserToken}", formContent);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                createErrorMessage = $"Failed to create project: {response.StatusCode}";
+                isCreating = false;
+                return;
+            }
+
+            // Reload projects
+            await LoadProjects();
+
+            // Close form and reset
+            showCreateForm = false;
+            newProjectName = string.Empty;
+            newProjectDescription = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            createErrorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+
+    private void ShowDeleteConfirmation(ProjectModel project)
+    {
+        projectToDelete = project;
+        deleteConfirmationText = string.Empty;
+        deleteErrorMessage = null;
+        showDeleteConfirmation = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirmation = false;
+        projectToDelete = null;
+        deleteConfirmationText = string.Empty;
+        deleteErrorMessage = null;
+    }
+
+    private async Task OnDeleteConfirmationInput(ChangeEventArgs e)
+    {
+        deleteConfirmationText = e.Value?.ToString() ?? string.Empty;
+
+        if (projectToDelete != null && deleteConfirmationText == projectToDelete.Name)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('delete-confirmation-input')?.blur()");
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (projectToDelete == null || deleteConfirmationText != projectToDelete.Name)
+        {
+            return;
+        }
+
+        isDeleting = true;
+        deleteErrorMessage = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("apiservice");
+            var response = await client.DeleteAsync($"projects/{projectToDelete.Id}/{UserToken}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                deleteErrorMessage = $"Failed to delete project: {response.StatusCode}";
+                isDeleting = false;
+                return;
+            }
+
+            // Reload projects
+            await LoadProjects();
+
+            // Close modal
+            showDeleteConfirmation = false;
+            projectToDelete = null;
+            deleteConfirmationText = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            deleteErrorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+
+    public record ProjectModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+}

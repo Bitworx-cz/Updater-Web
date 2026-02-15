@@ -1,0 +1,294 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using Microsoft.Extensions.Logging
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<MobileNav> Logger
+
+<div class="mobile-nav-container">
+    <button class="mobile-nav-toggle" @onclick="ToggleMobileMenu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+    
+    <div class="mobile-nav-overlay @(IsMenuOpen ? "open" : "")" @onclick="CloseMobileMenu"></div>
+    
+    <nav class="mobile-nav-menu @(IsMenuOpen ? "open" : "")">
+        <div class="mobile-nav-header">
+            <img src="logo-updater.svg" alt="Updater Logo" class="mobile-nav-logo"/>
+            <button class="mobile-nav-close" @onclick="CloseMobileMenu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mobile-nav-content">
+            <div class="mobile-nav-section">
+                <ul class="mobile-nav-links">
+                    <li><a href="/" @onclick="CloseMobileMenu">Overview</a></li>
+                    @if (IsAuthenticated)
+                    {
+                        <li><a href="/devices" @onclick="CloseMobileMenu">Devices</a></li>
+                        <li><a href="/projects" @onclick="CloseMobileMenu">Projects</a></li>
+                        <li><a href="/upload" @onclick="CloseMobileMenu">Upload</a></li>
+                        <li><a href="/token" @onclick="CloseMobileMenu">Token</a></li>
+                    }
+                    <li><a href="/docs" @onclick="CloseMobileMenu">Docs</a></li>
+                </ul>
+            </div>
+            
+            <div class="mobile-nav-actions">
+                @if (IsAuthenticated)
+                {
+                    <div class="mobile-user-info">
+                        <div class="mobile-user-details">
+                            <div class="mobile-user-name">@UserEmail</div>
+                        </div>
+                    </div>
+                    <a href="/upload" class="custom-button custom-button-outline" @onclick="CloseMobileMenu">
+                        Upload
+                    </a>
+                    <a href="/Identity/Logout" class="custom-button custom-button-outline" @onclick="CloseMobileMenu">
+                        Logout
+                    </a>
+                }
+                else
+                {
+                    <a href="/Identity/Login" class="custom-button custom-button-filled" @onclick="CloseMobileMenu">
+                        Login
+                    </a>
+                }
+            </div>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool IsMenuOpen = false;
+    private ClaimsPrincipal User;
+    private bool IsAuthenticated = false;
+    private string UserEmail = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+            IsAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+
+            if (IsAuthenticated)
+            {
+                // Get the user's email
+                var email = User.FindFirst(ClaimTypes.Email);
+                UserEmail = email != null ? email.Value : User.Identity?.Name ?? "Unknown";
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Failed to resolve the authenticated user");
+        }
+    }
+
+    private void ToggleMobileMenu()
+    {
+        IsMenuOpen = !IsMenuOpen;
+    }
+
+    private void CloseMobileMenu()
+    {
+        IsMenuOpen = false;
+    }
+}
+
+<style>
+.mobile-nav-container {
+    display: none;
+}
+
+.mobile-nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+}
+
+.hamburger-line {
+    width: 100%;
+    height: 3px;
+    background: var(--text);
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.mobile-nav-toggle.open .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.mobile-nav-toggle.open .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-nav-toggle.open .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+.mobile-nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-nav-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 320px;
+    height: 100%;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-subtle);
+    z-index: 1000;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+}
+
+.mobile-nav-menu.open {
+    right: 0;
+}
+
+.mobile-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.mobile-nav-logo {
+    height: 2rem;
+    width: auto;
+}
+
+.mobile-nav-close {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--radius);
+    transition: background-color 0.2s ease;
+}
+
+.mobile-nav-close:hover {
+    background: rgba(37, 99, 235, 0.14);
+}
+
+.mobile-nav-content {
+    padding: 1.5rem;
+}
+
+.mobile-nav-section {
+    margin-bottom: 2rem;
+}
+
+.mobile-nav-section h3 {
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'Inter', sans-serif;
+}
+
+.mobile-nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-nav-links li {
+    margin-bottom: 0.5rem;
+}
+
+.mobile-nav-links a {
+    display: block;
+    color: var(--text);
+    text-decoration: none;
+    padding: 0.75rem 0;
+    font-size: 16px;
+    transition: color 0.2s ease;
+    font-family: 'Martian Mono', monospace;
+    border-radius: var(--radius);
+    padding-left: 0.5rem;
+}
+
+.mobile-nav-links a:hover {
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.12);
+}
+
+.mobile-nav-actions {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.mobile-nav-actions .custom-button {
+    width: 100%;
+    justify-content: center;
+}
+
+.mobile-user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.9);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-subtle);
+}
+
+
+.mobile-user-details {
+    flex: 1;
+}
+
+.mobile-user-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+}
+
+@@media (max-width: 768px) {
+    .mobile-nav-container {
+        display: block;
+    }
+    
+    .mobile-nav-toggle {
+        display: flex;
+    }
+}
+</style>

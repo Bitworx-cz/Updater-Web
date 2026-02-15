@@ -1,0 +1,22 @@
+﻿<div class="card-custom @AdditionalClasses">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="card-header">
+            @if (!string.IsNullOrEmpty(Icon))
+            {
+                <span class="me-2">@Icon</span>
+            }
+            @Title
+        </div>
+    }
+    <div class="card-body">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public string AdditionalClasses { get; set; } = "";
+    [Parameter] public RenderFragment ChildContent { get; set; }
+}

@@ -1,0 +1,337 @@
+/* =========================
+   Get Started Guide Styles
+========================= */
+.guide-section {
+    margin-top: 3rem;
+    padding: 2rem 0;
+}
+
+.guide-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    margin: 0 0 4rem 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.guide-subtitle {
+    font-size: 1.125rem;
+    color: var(--text);
+    opacity: 0.8;
+    text-align: center;
+    margin: 0 0 3rem 0;
+    line-height: 1.6;
+}
+
+.steps-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(31, 41, 55, 0.9);
+    background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95) 0, rgba(15, 23, 42, 0.98) 35%, rgba(15, 23, 42, 1) 100%);
+    position: relative;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.step-number {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: var(--primary);
+    color: var(--text);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.step-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.step-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 0.75rem 0;
+    line-height: 1.3;
+    font-family: 'Inter', sans-serif;
+}
+
+.step-description {
+    font-size: 1rem;
+    color: var(--text);
+    opacity: 0.9;
+    line-height: 1.6;
+    margin: 0 0 1.5rem 0;
+}
+
+.step-instructions {
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(31, 41, 55, 0.9);
+    background: rgba(15, 23, 42, 0.98);
+    padding: 2rem;
+    margin: 1rem 0;
+    position: relative;
+}
+
+.step-instructions ol {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: var(--text);
+}
+
+.step-instructions li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.step-instructions strong {
+    color: var(--secondary);
+    font-weight: 600;
+}
+
+.step-note {
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(31, 41, 55, 0.9);
+    background: rgba(15, 23, 42, 0.96);
+    padding: 2rem;
+    margin: 1rem 0;
+    position: relative;
+    font-size: 0.875rem;
+    color: var(--text);
+    opacity: 0.9;
+}
+
+.step-note code {
+    background: rgba(43, 79, 255, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Martian Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--secondary);
+}
+
+.arduino-code {
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(31, 41, 55, 0.9);
+    background: rgba(15, 23, 42, 0.98);
+    padding: 2rem;
+    margin: 1rem 0;
+    position: relative;
+}
+
+.guide-footer {
+    text-align: center;
+    margin-top: 4rem;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: var(--radius-lg);
+}
+
+.guide-footer h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 0.75rem 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.guide-footer p {
+    font-size: 1rem;
+    color: var(--text);
+    opacity: 0.8;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.guide-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.guide-link:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .step-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .step-number {
+        align-self: center;
+    }
+    
+    .guide-title {
+        font-size: 1.75rem;
+    }
+    
+    .guide-subtitle {
+        font-size: 1rem;
+    }
+    
+    .step-title {
+        font-size: 1.25rem;
+    }
+    
+    /* Arduino code mobile improvements */
+    .arduino-code {
+        padding: 0.75rem;
+        font-size: 11px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        max-width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+    }
+    
+    .arduino-code pre {
+        margin: 0;
+        padding: 0;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+    }
+    
+    .arduino-code code {
+        font-size: 11px;
+        line-height: 1.3;
+        display: block;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+    }
+    
+    /* Step instructions mobile improvements */
+    .step-instructions {
+        padding: 1.5rem;
+    }
+    
+    .step-note {
+        padding: 1.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .steps-container {
+        gap: 1.5rem;
+    }
+    
+    .step-item {
+        padding: 1rem;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    /* Extra small mobile improvements */
+    .arduino-code {
+        padding: 0.5rem;
+        font-size: 10px;
+        margin: 0.5rem 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+    }
+    
+    .arduino-code code {
+        font-size: 10px;
+        line-height: 1.2;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        text-align: left;
+    }
+    
+    .arduino-code pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        text-align: left;
+    }
+    
+    .step-instructions {
+        padding: 1rem;
+    }
+    
+    .step-note {
+        padding: 1rem;
+        font-size: 0.75rem;
+    }
+    
+    .step-note code {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Extra small screens - very aggressive mobile fixes */
+@media (max-width: 360px) {
+    .arduino-code {
+        padding: 0.25rem;
+        font-size: 9px;
+        margin: 0.25rem 0;
+        text-align: left;
+    }
+    
+    .arduino-code code {
+        font-size: 9px;
+        line-height: 1.1;
+        text-align: left;
+    }
+    
+    .arduino-code pre {
+        text-align: left;
+    }
+    
+    .step-item {
+        padding: 0.75rem;
+    }
+    
+    .step-instructions {
+        padding: 0.75rem;
+    }
+    
+    .step-note {
+        padding: 0.75rem;
+        font-size: 0.7rem;
+    }
+}

@@ -1,0 +1,600 @@
+@page "/docs"
+
+<PageTitle>Documentation - BITWORX Firmware Update Platform</PageTitle>
+
+<div class="docs-container">
+    <div class="docs-sidebar">
+        <nav class="docs-nav">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="/docs#overview" class="nav-link" data-section="overview">Overview</a></li>
+                <li><a href="/docs#how-it-works" class="nav-link" data-section="how-it-works">How It Works</a></li>
+                <li><a href="/docs#architecture" class="nav-link" data-section="architecture">Architecture</a></li>
+                <li><a href="/docs#security" class="nav-link" data-section="security">Security Features</a></li>
+                <li><a href="/docs#api-reference" class="nav-link" data-section="api-reference">API Reference</a></li>
+                <li><a href="/docs#supported-platforms" class="nav-link" data-section="supported-platforms">Supported Platforms</a></li>
+                <li><a href="/docs#troubleshooting" class="nav-link" data-section="troubleshooting">Troubleshooting</a></li>
+                <li><a href="/docs#best-practices" class="nav-link" data-section="best-practices">Best Practices</a></li>
+            </ul>
+        </nav>
+    </div>
+    
+    <div class="docs-content">
+        <section id="overview" class="docs-section">
+            <h1>BITWORX Firmware Update Platform</h1>
+            <p class="docs-intro">
+                The BITWORX Firmware Update Platform is a comprehensive solution for managing over-the-air (OTA) firmware updates for Arduino and ESP32-based microcontrollers. Our platform eliminates the need for manual programming and enables remote deployment of firmware updates to devices in the field.
+            </p>
+            
+            <div class="feature-highlights">
+                <CardComponent Title="🔒 Secure by Design" AdditionalClasses="highlight-card">
+                    <p>End-to-end encryption, digital signatures, and integrity verification ensure your firmware updates are tamper-proof and authentic.</p>
+                </CardComponent>
+                <CardComponent Title="⚡ Zero-Touch Updates" AdditionalClasses="highlight-card">
+                    <p>Devices automatically check for and install updates without any manual intervention, keeping your fleet current and secure.</p>
+                </CardComponent>
+                <CardComponent Title="🌐 Remote Management" AdditionalClasses="highlight-card">
+                    <p>Deploy updates to devices anywhere in the world through our cloud-based management platform and REST API.</p>
+                </CardComponent>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="docs-section">
+            <h2>How It Works</h2>
+            <p>Our platform operates on a simple yet powerful principle: make firmware updates as easy as pushing code to a repository.</p>
+            
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Develop & Build</h4>
+                        <p>Develop your firmware using Arduino IDE or your preferred toolchain. Build and compile your code as usual.</p>
+                    </div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Upload Firmware</h4>
+                        <p>Upload your compiled binary to our platform via web interface, API, or CI/CD pipeline integration.</p>
+                    </div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Automatic Distribution</h4>
+                        <p>Devices automatically check for updates and download the latest firmware when available.</p>
+                    </div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Safe Installation</h4>
+                        <p>Firmware is verified, installed safely, and devices continue operating with the latest version.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="docs-section">
+            <h2>System Architecture</h2>
+            <p>Our platform consists of several key components working together to provide reliable firmware updates:</p>
+            
+            <div class="architecture-diagram">
+                <CardComponent Title="Cloud Platform" AdditionalClasses="arch-component">
+                    <ul>
+                        <li>Firmware storage and management</li>
+                        <li>Device registration and authentication</li>
+                        <li>Update scheduling and distribution</li>
+                        <li>Analytics and monitoring</li>
+                    </ul>
+                </CardComponent>
+                <CardComponent Title="Device SDK" AdditionalClasses="arch-component">
+                    <ul>
+                        <li>Arduino library for easy integration</li>
+                        <li>Automatic update checking</li>
+                        <li>Secure download and verification</li>
+                        <li>Safe firmware installation</li>
+                    </ul>
+                </CardComponent>
+                <CardComponent Title="Management Interface" AdditionalClasses="arch-component">
+                    <ul>
+                        <li>Web dashboard for monitoring</li>
+                        <li>Firmware upload and management</li>
+                        <li>Device fleet overview</li>
+                        <li>Update deployment controls</li>
+                    </ul>
+                </CardComponent>
+            </div>
+        </section>
+
+        <section id="security" class="docs-section">
+            <h2>Security Features</h2>
+            <p>Security is at the core of our platform. We implement multiple layers of protection to ensure your devices and firmware remain secure:</p>
+            
+            <div class="security-features">
+                <CardComponent Title="🔐 Authentication & Authorization" AdditionalClasses="security-item">
+                    <p>Every device requires a unique access token for authentication. Tokens can be revoked or rotated as needed for enhanced security.</p>
+                </CardComponent>
+                
+                <CardComponent Title="🛡️ Digital Signatures" AdditionalClasses="security-item">
+                    <p>All firmware is cryptographically signed before distribution. Devices verify signatures before installation to prevent tampering.</p>
+                </CardComponent>
+                
+                <CardComponent Title="🔒 End-to-End Encryption" AdditionalClasses="security-item">
+                    <p>Firmware transfers are encrypted using industry-standard protocols to prevent interception and unauthorized access.</p>
+                </CardComponent>
+                
+                <CardComponent Title="✅ Integrity Verification" AdditionalClasses="security-item">
+                    <p>Checksums and hash verification ensure firmware hasn't been corrupted during transfer or storage.</p>
+                </CardComponent>
+                
+                <CardComponent Title="🔄 Safe Rollback" AdditionalClasses="security-item">
+                    <p>If an update fails or causes issues, devices automatically roll back to the previous working version.</p>
+                </CardComponent>
+            </div>
+        </section>
+
+        <section id="api-reference" class="docs-section">
+            <h2>API Reference</h2>
+            <p>Our REST API allows you to integrate firmware updates into your existing workflows and CI/CD pipelines.</p>
+            
+            <div class="api-endpoints">
+                <div class="endpoint">
+                    <h4>Upload Firmware</h4>
+                    <div class="endpoint-details">
+                        <span class="method post">POST</span>
+                        <span class="url">/api/upload</span>
+                    </div>
+                    <p>Upload a new firmware binary to the platform.</p>
+                    <div class="code-block">
+                        <pre><code>curl -X POST https://espupdater.runasp.net/api/upload \
+  -F "filename=myfirmware.bin" \
+  -F "token=YOUR_TOKEN" \
+  -F "platform=ESP32" \
+  -F "file=@@firmware.bin"</code></pre>
+                    </div>
+                </div>
+                
+                <div class="endpoint">
+                    <h4>Get Device Status</h4>
+                    <div class="endpoint-details">
+                        <span class="method get">GET</span>
+                        <span class="url">/api/devices/{deviceId}</span>
+                    </div>
+                    <p>Retrieve the current status and version of a specific device.</p>
+                </div>
+               
+            </div>
+        </section>
+
+        <section id="supported-platforms" class="docs-section">
+            <h2>Supported Platforms</h2>
+            <p>Our platform supports a wide range of microcontroller platforms commonly used in IoT and embedded projects:</p>
+            
+            <div class="platforms-grid">
+                <CardComponent Title="ESP32 Series" AdditionalClasses="platform-card">
+                    <ul>
+                        <li>ESP32</li>
+                        <li>ESP32-S2</li>
+                        <li>ESP32-S3</li>
+                        <li>ESP32-C3</li>
+                    </ul>
+                </CardComponent>
+@*                 <CardComponent Title="Arduino Compatible" AdditionalClasses="platform-card">
+                    <ul>
+                        <li>Arduino Uno WiFi</li>
+                        <li>Arduino MKR WiFi 1010</li>
+                        <li>Arduino Nano 33 IoT</li>
+                        <li>Arduino Portenta H7</li>
+                    </ul>
+                </CardComponent>
+                <CardComponent Title="Other Platforms" AdditionalClasses="platform-card">
+                    <ul>
+                        <li>NodeMCU</li>
+                        <li>Wemos D1 Mini</li>
+                        <li>TTGO T-Display</li>
+                        <li>Custom ESP32 boards</li>
+                    </ul>
+                </CardComponent> *@
+            </div>
+        </section>
+
+        <section id="troubleshooting" class="docs-section">
+            <h2>Troubleshooting</h2>
+            <p>Common issues and their solutions:</p>
+            
+            <div class="troubleshooting-item">
+                <h4>Device not checking for updates</h4>
+                <p><strong>Possible causes:</strong></p>
+                <ul>
+                    <li>WiFi connection issues</li>
+                    <li>Invalid or expired access token</li>
+                    <li>Incorrect firmware filename in code</li>
+                </ul>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Verify WiFi connectivity and signal strength</li>
+                    <li>Generate a new access token</li>
+                    <li>Ensure firmware filename matches exactly</li>
+                </ul>
+            </div>
+            
+            <div class="troubleshooting-item">
+                <h4>Update fails to install</h4>
+                <p><strong>Possible causes:</strong></p>
+                <ul>
+                    <li>Insufficient flash memory</li>
+                    <li>Corrupted firmware binary</li>
+                    <li>Incompatible platform selection</li>
+                </ul>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li>Check available flash memory</li>
+                    <li>Re-upload firmware binary</li>
+                    <li>Verify correct platform is selected</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="best-practices" class="docs-section">
+            <h2>Best Practices</h2>
+            <p>Follow these guidelines to ensure successful firmware updates:</p>
+            
+            <div class="best-practices">
+                <CardComponent Title="🔧 Development" AdditionalClasses="practice-item">
+                    <ul>
+                        <li>Always test firmware on a small subset of devices first</li>
+                        <li>Implement proper error handling and logging</li>
+                        <li>Use version numbers in your firmware filenames</li>
+                        <li>Keep firmware sizes reasonable for your target platform</li>
+                    </ul>
+                </CardComponent>
+                
+                <CardComponent Title="🚀 Deployment" AdditionalClasses="practice-item">
+                    <ul>
+                        <li>Use staged rollouts for large device fleets</li>
+                        <li>Monitor device health after updates</li>
+                        <li>Keep previous firmware versions available for rollback</li>
+                        <li>Document changes between firmware versions</li>
+                    </ul>
+                </CardComponent>
+                
+                <CardComponent Title="🔒 Security" AdditionalClasses="practice-item">
+                    <ul>
+                        <li>Rotate access tokens regularly</li>
+                        <li>Use strong, unique tokens for each device group</li>
+                        <li>Monitor for unauthorized access attempts</li>
+                        <li>Keep your SDK library updated</li>
+                    </ul>
+                </CardComponent>
+            </div>
+        </section>
+    </div>
+</div>
+
+<style>
+html {
+    scroll-padding-top: 6.5rem;
+}
+
+.docs-container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 6.5rem 2rem 2rem 2rem;
+    gap: 2rem;
+}
+
+.docs-sidebar {
+    flex: 0 0 250px;
+    position: sticky;
+    top: 6.5rem;
+    height: fit-content;
+}
+
+.docs-nav {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.docs-nav h3 {
+    margin: 0 0 1rem 0;
+    color: var(--secondary);
+    font-size: 1.1rem;
+}
+
+.docs-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.docs-nav li {
+    margin-bottom: 0.5rem;
+}
+
+.docs-nav a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 0.5rem 0;
+    display: block;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+}
+
+.docs-nav a:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--secondary);
+}
+
+.docs-nav a.active {
+    background: var(--secondary);
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.docs-content {
+    flex: 1;
+    max-width: 800px;
+}
+
+.docs-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    scroll-margin-top: 4.5rem;
+}
+
+.docs-section:last-child {
+    border-bottom: none;
+}
+
+.docs-intro {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+    color: rgba(246, 248, 237, 0.9);
+}
+
+.feature-highlights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.highlight-card .card-header {
+    color: var(--secondary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.workflow-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.workflow-step {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: var(--secondary);
+    color: var(--text-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin: 0 auto 1rem auto;
+}
+
+.workflow-arrow {
+    font-size: 1.5rem;
+    color: var(--secondary);
+    font-weight: bold;
+}
+
+.architecture-diagram {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.arch-component .card-header {
+    color: var(--secondary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.security-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.security-item .card-header {
+    color: var(--secondary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.api-endpoints {
+    margin: 2rem 0;
+}
+
+.endpoint {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.endpoint h4 {
+    color: var(--secondary);
+    margin: 0 0 1rem 0;
+}
+
+.endpoint-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.method {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius);
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.method.post {
+    background: var(--success);
+    color: white;
+}
+
+.method.get {
+    background: var(--primary);
+    color: white;
+}
+
+.url {
+    font-family: 'Martian Mono', monospace;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+}
+
+.code-block {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+}
+
+.code-block pre {
+    margin: 0;
+    font-family: 'Martian Mono', monospace;
+    font-size: 0.9rem;
+}
+
+.platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.platform-card .card-header {
+    color: var(--secondary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.troubleshooting-item {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.troubleshooting-item h4 {
+    color: var(--secondary);
+    margin: 0 0 1rem 0;
+}
+
+.best-practices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.practice-item .card-header {
+    color: var(--secondary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+@@media (max-width: 768px) {
+    .docs-container {
+        flex-direction: column;
+        padding: 6.5rem 1rem 1rem 1rem;
+    }
+    
+    .docs-sidebar {
+        position: static;
+        order: 2;
+    }
+    
+    .workflow-diagram {
+        flex-direction: column;
+    }
+    
+    .workflow-arrow {
+        transform: rotate(90deg);
+    }
+}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.docs-section');
+        
+        function updateActiveNav() {
+            let current = '';
+            const scrollPosition = window.scrollY + 100; // Offset for header
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.offsetHeight;
+                
+                if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-section') === current) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        // Update on scroll
+        window.addEventListener('scroll', updateActiveNav);
+        
+        // Update on page load
+        updateActiveNav();
+    });
+</script>
+</style>

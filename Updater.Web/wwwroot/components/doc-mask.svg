@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- Solid document shape for masking -->
+  <path d="M8 3.5h5.5L18.5 8v12.5A1.5 1.5 0 0 1 17 22H8a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z" fill="white" />
+  <path d="M13.5 3.5V7A1.5 1.5 0 0 0 15 8.5h3.5" fill="white" />
+  <rect x="8" y="10.5" width="7" height="1.4" fill="white" />
+  <rect x="8" y="14" width="7.5" height="1.4" fill="white" />
+</svg>

@@ -1,0 +1,52 @@
+﻿@page "/token"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory httpClient;
+@inject NavigationManager navigationManager;
+<PageTitle>Token</PageTitle>
+
+<link rel="stylesheet" href="app.css">
+
+<div class="container">
+    <!-- Content Section -->
+    <main>
+
+        @if (User.Identity?.Name != null)
+        {
+            <p>Tokens are now part of project group. Use project group token to get sw update</p>
+        }
+        else
+        {
+            <div class="token-box empty">
+                Please log in to view your token.
+            </div>
+        }
+    </main>
+</div>
+
+@code {
+    private ClaimsPrincipal User;
+    private string UserToken = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+
+            var nid = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            var client = httpClient.CreateClient("apiservice");
+            UserToken = await client.GetAsync($"{nid!.Value}/token").Result.Content.ReadAsStringAsync();
+        }
+        catch (Exception)
+        {
+            navigationManager.NavigateTo("/Identity/Login",true);
+        }
+    }
+}

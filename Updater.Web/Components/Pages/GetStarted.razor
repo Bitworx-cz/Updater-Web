@@ -1,0 +1,133 @@
+@page "/get-started"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using Microsoft.Extensions.Logging
+@inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<GetStarted> Logger
+
+<PageTitle>Get Started with BITWORX - Step by Step Guide</PageTitle>
+
+<div class="container">
+    <section class="guide-section">
+        <p class="guide-subtitle">Follow these simple steps to set up automatic firmware updates</p>
+        
+        <div class="steps-container">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3 class="step-title">Login to Your Account</h3>
+                    <p class="step-description">Sign in with your Google account to access the updater service and manage your devices.</p>
+                    @if (IsAuthenticated)
+                    {
+                        <div class="step-note">
+                            <strong>Note:</strong> You're already logged in! You can proceed to the next step.
+                        </div>
+                    }
+                    else
+                    {
+                        <ButtonComponent Type="ButtonComponent.ButtonVariant.Filled" AdditionalClasses="mt-3" OnClick="@(() => navigationManager.NavigateTo("/Identity/Login", true))">
+                            Login with Google
+                        </ButtonComponent>
+                    }
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3 class="step-title">Create project</h3>
+                    <p class="step-description">Create new project and project group inside. They are basic units, that will allow you to monitor all devices assigned to grou.</p>
+                    <ButtonComponent Type="ButtonComponent.ButtonVariant.Outline" AdditionalClasses="mt-3" OnClick="@(() => navigationManager.NavigateTo("/projects"))">
+                        Manage projects
+                    </ButtonComponent>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3 class="step-title">Install the Updater Library</h3>
+                    <p class="step-description">Add our library to your Arduino IDE to enable automatic updates.</p>
+                    <div class="step-instructions">
+                        <ol>
+                            <li>Open the <strong>Arduino IDE</strong></li>
+                            <li>Go to <strong>Sketch → Include Library → Manage Libraries…</strong></li>
+                            <li>Search for <strong>"Updater"</strong></li>
+                            <li>Click <strong>Install</strong></li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3 class="step-title">Add Update Code to Your Sketch</h3>
+                    <p class="step-description">Include our update logic in your Arduino code.</p>
+                    <div class="arduino-code">
+<pre><code>#include &lt;Updater.h&gt;
+
+void setup() {
+    // Your setup code here
+}
+
+void loop() {
+    // Your normal logic here...
+    
+    updater.TryUpdate("yourTokenHere");
+    
+    delay(3600000); // Check every hour
+}</code></pre>
+                    </div>
+                    <div class="step-note">
+                        <strong>Note:</strong> Replace <code>yourTokenHere</code> with your actual token.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h3 class="step-title">Upload Your Firmware</h3>
+                    <p class="step-description">Upload your compiled firmware under your group to our service for distribution.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <h3 class="step-title">Deploy and Test</h3>
+                    <p class="step-description">Upload your sketch to your Arduino and watch it update automatically!</p>
+                    <div class="step-instructions">
+                        <ol>
+                            <li>Upload your sketch to your Arduino board</li>
+                            <li>Connect the board to WiFi</li>
+                            <li>Your device will automatically check for updates</li>
+                            <li>Upload new firmware versions anytime from the dashboard</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@code {
+    private ClaimsPrincipal User;
+    private bool IsAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+            IsAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Failed to resolve the authenticated user");
+        }
+    }
+}

@@ -1,0 +1,135 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using Microsoft.Extensions.Logging
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<ActionButtons> Logger
+
+@* Action Buttons Component for App Bar *@
+
+<div class="action-buttons">
+    @if (IsAuthenticated)
+    {
+        <div class="user-info">
+            <div class="user-avatar" title="@UserEmail">
+                @UserInitials
+            </div>
+        </div>
+
+        <a href="/Identity/Logout" class="custom-button custom-button-outline subtle-action">
+            <span>Logout</span>
+        </a>
+    }
+    else
+    {
+        <a href="/Identity/Login" class="custom-button custom-button-filled primary-action">
+            <i class="bi bi-box-arrow-in-right"></i>
+            <span>Sign in</span>
+        </a>
+    }
+</div>
+
+<style>
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .primary-action i,
+    .subtle-action i {
+        font-size: 1rem;
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-right: 0.5rem;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        cursor: default;
+    }
+    
+    @@media (max-width: 768px) {
+        .action-buttons {
+            display: none;
+        }
+    }
+</style>
+
+@code {
+    private ClaimsPrincipal User;
+    private bool IsAuthenticated = false;
+    private string UserEmail = "";
+    private string UserInitials => ComputeInitials(UserEmail);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            User = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+            IsAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+
+            if (IsAuthenticated)
+            {
+                // Get the user's email
+                var email = User.FindFirst(ClaimTypes.Email);
+                UserEmail = email != null ? email.Value : User.Identity?.Name ?? "Unknown";
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Failed to resolve the authenticated user");
+        }
+    }
+
+    private static string ComputeInitials(string emailOrName)
+    {
+        if (string.IsNullOrWhiteSpace(emailOrName))
+            return "?";
+
+        var namePart = emailOrName;
+        var atIndex = emailOrName.IndexOf('@');
+        if (atIndex > 0)
+        {
+            namePart = emailOrName[..atIndex];
+        }
+
+        char? first = null;
+        char? second = null;
+        for (int i = 0; i < namePart.Length; i++)
+        {
+            var c = namePart[i];
+            if (!first.HasValue && char.IsLetterOrDigit(c))
+            {
+                first = char.ToUpperInvariant(c);
+            }
+            else if (first.HasValue && !second.HasValue && i > 0 &&
+                     (namePart[i - 1] == '.' || namePart[i - 1] == '-' || namePart[i - 1] == '_') &&
+                     char.IsLetterOrDigit(c))
+            {
+                second = char.ToUpperInvariant(c);
+                break;
+            }
+        }
+
+        if (!first.HasValue)
+            first = char.ToUpperInvariant(emailOrName[0]);
+
+        return second.HasValue ? new string(new[] { first.Value, second.Value }) : first.Value.ToString();
+    }
+}

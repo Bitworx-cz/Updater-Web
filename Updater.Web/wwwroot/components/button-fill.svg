@@ -1,0 +1,15 @@
+<svg width="135" height="47" viewBox="0 0 135 47" fill="none" xmlns="http://www.w3.org/2000/svg">
+<line x1="9" y1="2" x2="126" y2="1.99999" stroke="#FEFF00" stroke-width="3"/>
+<line x1="9" y1="45" x2="126" y2="45" stroke="#FEFF00" stroke-width="3"/>
+<line x1="1.5" y1="9.5" x2="1.5" y2="37.5" stroke="#FEFF00" stroke-width="3"/>
+<line x1="133.5" y1="9.5" x2="133.5" y2="37.5" stroke="#FEFF00" stroke-width="3"/>
+<rect x="126" y="3.5" width="3" height="3" fill="#FEFF00"/>
+<rect x="129" y="6.5" width="3" height="3" fill="#FEFF00"/>
+<rect width="3" height="3" transform="matrix(1 0 0 -1 126 43.5)" fill="#FEFF00"/>
+<rect width="3" height="3" transform="matrix(1 0 0 -1 129 40.5)" fill="#FEFF00"/>
+<rect width="3" height="3" transform="matrix(-1 0 0 1 9 3.5)" fill="#FEFF00"/>
+<rect width="3" height="3" transform="matrix(-1 0 0 1 6 6.5)" fill="#FEFF00"/>
+<rect x="9" y="43.5" width="3" height="3" transform="rotate(180 9 43.5)" fill="#FEFF00"/>
+<rect x="6" y="40.5" width="3" height="3" transform="rotate(180 6 40.5)" fill="#FEFF00"/>
+<path d="M10.5 2L1.5 11V35.8671L10.5 45L124 45.5L133.5 36V11L124.5 2H10.5Z" fill="#FEFF00"/>
+</svg>
